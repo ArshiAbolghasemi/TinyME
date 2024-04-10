@@ -3,21 +3,32 @@ package ir.ut.se.tinyme.domain;
 import ir.ut.se.tinyme.domain.entity.*;
 import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
+import ir.ut.se.tinyme.messaging.EventPublisher;
+import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.annotation.DirtiesContext;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
+@SpringBootTest
+@DirtiesContext
 public class MinimumExecQuantityTest {
     private Security security;
     private Broker broker;
     private Shareholder shareholder;
     private OrderBook orderBook;
     private List<Order> orders;
+    @Autowired
     private Matcher matcher;
+    @Autowired
     private OrderHandler orderHandler;
-
+    @Autowired
+    EventPublisher eventPublisher;
 
     @BeforeEach
     void setupOrderBook() {
@@ -39,5 +50,6 @@ public class MinimumExecQuantityTest {
                 new Order(10, security, Side.SELL, 65, 15820, broker, shareholder)
         );
         orders.forEach(order -> orderBook.enqueue(order));
+
     }
 }
