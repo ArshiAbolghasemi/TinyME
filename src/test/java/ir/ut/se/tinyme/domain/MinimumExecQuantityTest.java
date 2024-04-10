@@ -73,7 +73,17 @@ public class MinimumExecQuantityTest {
         assertThat(outputEvent.getErrors()).containsOnly(
                 Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE
         );
+    }
 
+    @Test
+    void order_update_where_MEQ_shouldnt_change(){
+        Order newOrder = new Order(11, security, Side.BUY, 304, 15700, broker, shareholder,
+                LocalDateTime.now() ,100);
+
+        newOrder.updateFromRequest(EnterOrderRq.createUpdateOrderRq(1, security.getIsin(), 11, LocalDateTime.now(),
+                Side.BUY, 400, 15450, broker.getBrokerId(), 0, 0, 500));
+
+        assertThat(newOrder.getMinimumExecutionQuantity()).isEqualTo(100);
     }
 
 }
