@@ -109,8 +109,8 @@ public class OrderHandler {
     }
 
     private boolean isValidMinimumExecutionQuantityRange(EnterOrderRq enterOrderRq) {
-        return enterOrderRq.getMinimumExecutionQuantity() >= 0 &&
-                enterOrderRq.getMinimumExecutionQuantity() < enterOrderRq.getQuantity();
+        return (enterOrderRq.getMinimumExecutionQuantity() >= 0 &&
+                enterOrderRq.getMinimumExecutionQuantity() <= enterOrderRq.getQuantity());
     }
 
     private void validateDeleteOrderRq(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
