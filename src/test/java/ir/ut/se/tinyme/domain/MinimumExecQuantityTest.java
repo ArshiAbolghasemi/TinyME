@@ -4,15 +4,16 @@ import ir.ut.se.tinyme.domain.entity.*;
 import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
-import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.messaging.Message;
+import ir.ut.se.tinyme.messaging.event.OrderAcceptedEvent;
 import ir.ut.se.tinyme.messaging.event.OrderRejectedEvent;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
-import ir.ut.se.tinyme.messaging.request.OrderEntryType;
+import ir.ut.se.tinyme.repository.BrokerRepository;
+import ir.ut.se.tinyme.repository.SecurityRepository;
+import ir.ut.se.tinyme.repository.ShareholderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -35,16 +36,23 @@ public class MinimumExecQuantityTest {
     @Autowired
     private Matcher matcher;
     @Autowired
-    private OrderHandler orderHandler;
+    private SecurityRepository securityRepository;
     @Autowired
-    EventPublisher eventPublisher;
+    private BrokerRepository brokerRepository;
+    @Autowired
+    private ShareholderRepository shareholderRepository;
+    private EventPublisher mockEventPublisher;
+    private OrderHandler mockOrderHandler;
 
     @BeforeEach
     void setupOrderBook() {
-        security = Security.builder().build();
-        broker = Broker.builder().credit(100_000_000L).build();
-        shareholder = Shareholder.builder().build();
+        security = Security.builder().isin("ABC").build();
+        securityRepository.addSecurity(security);
+        broker = Broker.builder().brokerId(1).credit(100_000_000L).build();
+        brokerRepository.addBroker(broker);
+        shareholder = Shareholder.builder().shareholderId(1).build();
         shareholder.incPosition(security, 100_000);
+        shareholderRepository.addShareholder(shareholder);
         orderBook = security.getOrderBook();
         orders = Arrays.asList(
                 new Order(1, security, Side.BUY, 304, 15700, broker, shareholder),
@@ -59,30 +67,40 @@ public class MinimumExecQuantityTest {
                 new Order(10, security, Side.SELL, 65, 200, broker, shareholder)
         );
         orders.forEach(order -> orderBook.enqueue(order));
+        mockEventPublisher = mock(EventPublisher.class, withSettings().verboseLogging());
+        mockOrderHandler = new OrderHandler(securityRepository, brokerRepository, shareholderRepository,
+                mockEventPublisher, matcher);
+    }
 
+    @Test
+    void new_order_with_valid_MEQ_and_minimum_quantity_trade_passes() {
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.BUY, 2000, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 500));
+        verify(mockEventPublisher).publish((new OrderAcceptedEvent(1, 11)));
     }
 
     @Test
     void new_order_request_where_MEQ_is_out_of_range(){
-        EnterOrderRq rq = EnterOrderRq.createNewOrderRq(1, security.getIsin(), 200, LocalDateTime.now(),
-                Side.SELL, 300, 15450, broker.getBrokerId(), 0, 0, 500);
-        orderHandler.handleEnterOrder(rq);
+        EnterOrderRq rq = EnterOrderRq.createNewOrderRq(1, security.getIsin(), 11, LocalDateTime.now(),
+                Side.SELL, 300, 15450, broker.getBrokerId(), shareholder.getShareholderId(),
+                0, 500);
+        mockOrderHandler.handleEnterOrder(rq);
         ArgumentCaptor<OrderRejectedEvent> orderRejectedCaptor = ArgumentCaptor.forClass(OrderRejectedEvent.class);
-        verify(eventPublisher).publish(orderRejectedCaptor.capture());
+        verify(mockEventPublisher).publish(orderRejectedCaptor.capture());
         OrderRejectedEvent outputEvent = orderRejectedCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(-1);
-        assertThat(outputEvent.getErrors()).containsOnly(
-                Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE
-        );
+        assertThat(outputEvent.getOrderId()).isEqualTo(11);
+        assertThat(outputEvent.getErrors()).containsOnly(Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE);
     }
 
     @Test
-    void order_update_where_MEQ_shouldnt_change(){
+    void order_update_where_MEQ_should_not_change(){
         Order newOrder = new Order(11, security, Side.BUY, 304, 15700, broker, shareholder,
                 LocalDateTime.now() ,100);
 
-        newOrder.updateFromRequest(EnterOrderRq.createUpdateOrderRq(1, security.getIsin(), 11, LocalDateTime.now(),
-                Side.BUY, 400, 15450, broker.getBrokerId(), 0, 0, 200));
+        newOrder.updateFromRequest(EnterOrderRq.createUpdateOrderRq(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.BUY, 400, 15450, broker.getBrokerId(), 0, 0,
+                200));
 
         assertThat(newOrder.getMinimumExecutionQuantity()).isEqualTo(100);
     }
@@ -99,7 +117,7 @@ public class MinimumExecQuantityTest {
     }
 
     @Test
-    void new_order_where_order_dosnt_matches(){
+    void new_order_where_order_does_not_matches(){
         Order newOrder = new Order(11, security, Side.BUY, 304, 300, broker, shareholder,
                 LocalDateTime.now() ,100);
         OrderBook baseOrderBook = security.getOrderBook();
