@@ -29,13 +29,15 @@ public class Security {
         Order order;
         if (enterOrderRq.getPeakSize() == 0)
             order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
-                    enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder, enterOrderRq.getEntryTime());
+                    enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
+                    enterOrderRq.getEntryTime(), enterOrderRq.getMinimumExecutionQuantity());
         else
             order = new IcebergOrder(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                     enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
-                    enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize());
+                    enterOrderRq.getEntryTime(), enterOrderRq.getPeakSize(),
+                    enterOrderRq.getMinimumExecutionQuantity());
 
-        return matcher.execute(order);
+        return matcher.execute(order, enterOrderRq.getMinimumExecutionQuantity());
     }
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
@@ -55,6 +57,9 @@ public class Security {
             throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
         if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
             throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
+        if (updateOrderRq.getMinimumExecutionQuantity() != order.getMinimumExecutionQuantity()) {
+            throw new InvalidRequestException(Message.COULD_NOT_UPDATE_MEQ);
+        }
 
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,

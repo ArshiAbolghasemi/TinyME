@@ -57,8 +57,7 @@ public class Matcher {
         }
     }
 
-    public MatchResult execute(Order order) {
-        MatchResult result = match(order);
+    private MatchResult processMatchResult(MatchResult result, Order order) {
         if (result.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT)
             return result;
 
@@ -79,6 +78,26 @@ public class Matcher {
             }
         }
         return result;
+    }
+
+    public MatchResult execute(Order order) {
+        MatchResult result = match(order);
+        return this.processMatchResult(result, order);
+    }
+
+    public MatchResult execute(Order order, int minimumExecutionQuantity) {
+        MatchResult result = match(order);
+        if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
+            return MatchResult.minimumExecutionQuantityNotMet();
+        }
+        return this.processMatchResult(result, order);
+    }
+
+    private boolean isMinimumExecutionQuantityMet(MatchResult result, int minimumExecutionQuantity) {
+        return (result.remainder().getQuantity() == 0 ||
+                result.trades().stream()
+                        .mapToInt(Trade::getQuantity)
+                        .sum() >= minimumExecutionQuantity);
     }
 
 }
