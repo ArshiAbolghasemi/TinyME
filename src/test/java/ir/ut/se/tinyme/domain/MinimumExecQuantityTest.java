@@ -56,7 +56,7 @@ public class MinimumExecQuantityTest {
                 new Order(7, security, Side.SELL, 285, 15810, broker, shareholder),
                 new Order(8, security, Side.SELL, 800, 15810, broker, shareholder),
                 new Order(9, security, Side.SELL, 340, 15820, broker, shareholder),
-                new Order(10, security, Side.SELL, 65, 15820, broker, shareholder)
+                new Order(10, security, Side.SELL, 65, 200, broker, shareholder)
         );
         orders.forEach(order -> orderBook.enqueue(order));
 
@@ -100,7 +100,7 @@ public class MinimumExecQuantityTest {
 
     @Test
     void new_order_where_order_dosnt_matches(){
-        Order newOrder = new Order(11, security, Side.BUY, 304, 100, broker, shareholder,
+        Order newOrder = new Order(11, security, Side.BUY, 304, 300, broker, shareholder,
                 LocalDateTime.now() ,100);
         OrderBook baseOrderBook = security.getOrderBook();
         MatchResult matchResult = matcher.execute(newOrder, newOrder.getMinimumExecutionQuantity());
