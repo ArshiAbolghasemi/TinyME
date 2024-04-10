@@ -102,8 +102,15 @@ public class OrderHandler {
             errors.add(Message.UNKNOWN_SHAREHOLDER_ID);
         if (enterOrderRq.getPeakSize() < 0 || enterOrderRq.getPeakSize() >= enterOrderRq.getQuantity())
             errors.add(Message.INVALID_PEAK_SIZE);
+        if (!this.isValidMinimumExecutionQuantityRange(enterOrderRq))
+            errors.add(Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE);
         if (!errors.isEmpty())
             throw new InvalidRequestException(errors);
+    }
+
+    private boolean isValidMinimumExecutionQuantityRange(EnterOrderRq enterOrderRq) {
+        return (enterOrderRq.getMinimumExecutionQuantity() >= 0 &&
+                enterOrderRq.getMinimumExecutionQuantity() <= enterOrderRq.getQuantity());
     }
 
     private void validateDeleteOrderRq(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {

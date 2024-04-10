@@ -218,6 +218,7 @@ public class BrokerCreditTest {
                 toBeUpdateOrder.getPrice(),
                 toBeUpdateOrder.getBroker().getBrokerId(),
                 toBeUpdateOrder.getShareholder().getShareholderId(),
+                0,
                 0
         );
 
@@ -233,7 +234,7 @@ public class BrokerCreditTest {
         EnterOrderRq enterOrderRq = EnterOrderRq.createUpdateOrderRq(1, toBeUpdateOrder.getSecurity().getIsin(),
                 toBeUpdateOrder.getOrderId(), LocalDateTime.now(), toBeUpdateOrder.getSide(), 2100,
                 toBeUpdateOrder.getPrice(), toBeUpdateOrder.getBroker().getBrokerId(),
-                toBeUpdateOrder.getShareholder().getShareholderId(), 0);
+                toBeUpdateOrder.getShareholder().getShareholderId(), 0, 0);
 
         assertThatNoException().isThrownBy(() -> security.updateOrder(enterOrderRq, matcher));
 
@@ -250,7 +251,7 @@ public class BrokerCreditTest {
         EnterOrderRq enterOrderRq = EnterOrderRq.createUpdateOrderRq(1, toBeUpdateOrder.getSecurity().getIsin(),
                 toBeUpdateOrder.getOrderId(), LocalDateTime.now(), toBeUpdateOrder.getSide(), 1100,
                 toBeUpdateOrder.getPrice(), toBeUpdateOrder.getBroker().getBrokerId(),
-                toBeUpdateOrder.getShareholder().getShareholderId(), 0);
+                toBeUpdateOrder.getShareholder().getShareholderId(), 0, 0);
 
         assertThatNoException().isThrownBy(() -> security.updateOrder(enterOrderRq, matcher));
 
