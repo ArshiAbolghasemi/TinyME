@@ -86,6 +86,8 @@ public class Matcher {
     }
 
     public MatchResult execute(Order order, int minimumExecutionQuantity) {
+        assert order.getStatus() == OrderStatus.NEW;
+
         MatchResult result = match(order);
         if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
             rollbackTrades(order, result.trades());
