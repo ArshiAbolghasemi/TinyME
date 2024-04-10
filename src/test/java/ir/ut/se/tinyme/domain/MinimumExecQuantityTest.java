@@ -5,7 +5,13 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
+import ir.ut.se.tinyme.messaging.Message;
+import ir.ut.se.tinyme.messaging.event.OrderRejectedEvent;
+import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
+import ir.ut.se.tinyme.messaging.request.OrderEntryType;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -14,6 +20,9 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
 
 @SpringBootTest
 @DirtiesContext
@@ -52,4 +61,19 @@ public class MinimumExecQuantityTest {
         orders.forEach(order -> orderBook.enqueue(order));
 
     }
+    @Test
+    void new_order_request_where_MEQ_is_out_of_range(){
+        EnterOrderRq rq = EnterOrderRq.createNewOrderRq(1, security.getIsin(), 200, LocalDateTime.now(),
+                Side.SELL, 300, 15450, broker.getBrokerId(), 0, 0, 500);
+        orderHandler.handleEnterOrder(rq);
+        ArgumentCaptor<OrderRejectedEvent> orderRejectedCaptor = ArgumentCaptor.forClass(OrderRejectedEvent.class);
+        verify(eventPublisher).publish(orderRejectedCaptor.capture());
+        OrderRejectedEvent outputEvent = orderRejectedCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(-1);
+        assertThat(outputEvent.getErrors()).containsOnly(
+                Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE
+        );
+
+    }
+
 }
