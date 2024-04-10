@@ -61,6 +61,7 @@ public class MinimumExecQuantityTest {
         orders.forEach(order -> orderBook.enqueue(order));
 
     }
+
     @Test
     void new_order_request_where_MEQ_is_out_of_range(){
         EnterOrderRq rq = EnterOrderRq.createNewOrderRq(1, security.getIsin(), 200, LocalDateTime.now(),
@@ -81,9 +82,19 @@ public class MinimumExecQuantityTest {
                 LocalDateTime.now() ,100);
 
         newOrder.updateFromRequest(EnterOrderRq.createUpdateOrderRq(1, security.getIsin(), 11, LocalDateTime.now(),
-                Side.BUY, 400, 15450, broker.getBrokerId(), 0, 0, 500));
+                Side.BUY, 400, 15450, broker.getBrokerId(), 0, 0, 200));
 
         assertThat(newOrder.getMinimumExecutionQuantity()).isEqualTo(100);
     }
 
+    @Test
+    void order_update_where_update_request_dosnt_change_MEQ(){
+        Order newOrder = new Order(11, security, Side.BUY, 304, 15700, broker, shareholder,
+                LocalDateTime.now() ,100);
+
+        newOrder.updateFromRequest(EnterOrderRq.createUpdateOrderRq(1, security.getIsin(), 11, LocalDateTime.now(),
+                Side.BUY, 400, 15450, broker.getBrokerId(), 0, 0, 100));
+
+        assertThat(newOrder.getMinimumExecutionQuantity()).isEqualTo(100);
+    }
 }
