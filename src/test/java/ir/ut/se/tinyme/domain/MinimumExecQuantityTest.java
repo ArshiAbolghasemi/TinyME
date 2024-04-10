@@ -97,4 +97,14 @@ public class MinimumExecQuantityTest {
 
         assertThat(newOrder.getMinimumExecutionQuantity()).isEqualTo(100);
     }
+
+    @Test
+    void new_order_where_order_dosnt_matches(){
+        Order newOrder = new Order(11, security, Side.BUY, 304, 100, broker, shareholder,
+                LocalDateTime.now() ,100);
+        OrderBook baseOrderBook = security.getOrderBook();
+        MatchResult matchResult = matcher.execute(newOrder, newOrder.getMinimumExecutionQuantity());
+        assertThat(matchResult).isEqualTo(MatchResult.minimumExecutionQuantityNotMet());
+        assertThat(security.getOrderBook()).isEqualTo(baseOrderBook);
+    }
 }
