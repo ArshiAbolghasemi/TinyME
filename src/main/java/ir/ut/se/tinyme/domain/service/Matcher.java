@@ -88,6 +88,7 @@ public class Matcher {
     public MatchResult execute(Order order, int minimumExecutionQuantity) {
         MatchResult result = match(order);
         if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
+            rollbackTrades(order, result.trades());
             return MatchResult.minimumExecutionQuantityNotMet();
         }
         return this.processMatchResult(result, order);
