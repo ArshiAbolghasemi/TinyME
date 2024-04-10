@@ -24,6 +24,8 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.withSettings;
 
 @SpringBootTest
 @DirtiesContext
@@ -106,7 +108,7 @@ public class MinimumExecQuantityTest {
     }
 
     @Test
-    void order_update_where_update_request_dosnt_change_MEQ(){
+    void order_update_where_update_request_does_not_change_MEQ(){
         Order newOrder = new Order(11, security, Side.BUY, 304, 15700, broker, shareholder,
                 LocalDateTime.now() ,100);
 
