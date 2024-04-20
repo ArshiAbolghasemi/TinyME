@@ -43,6 +43,9 @@ public class Matcher {
                 newOrder.makeQuantityZero();
             }
         }
+        if (newOrder.getStatus() == OrderStatus.ACTIVE){
+            return MatchResult.stopLimitOrderActivated (newOrder, trades);
+        }
         return MatchResult.executed(newOrder, trades);
     }
 
