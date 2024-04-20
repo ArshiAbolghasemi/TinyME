@@ -5,6 +5,8 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.Message;
+import ir.ut.se.tinyme.messaging.event.OrderAcceptedEvent;
+import ir.ut.se.tinyme.messaging.event.OrderActivatedEvent;
 import ir.ut.se.tinyme.messaging.event.OrderRejectedEvent;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.repository.BrokerRepository;
@@ -125,5 +127,24 @@ public class StopLimitOrderTest {
                 Message.MEQ_ORDERS_CANT_BE_STOP_PRICE_ORDERS,
                 Message.ICEBERG_ORDERS_CANT_BE_STOP_PRICE_ORDERS
         );
+    }
+
+    @Test
+    void new_order_with_valid_stop_price() {
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.SELL, 200, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 15800));
+        verify(mockEventPublisher).publish((new OrderAcceptedEvent(1, 11)));
+    }
+
+    @Test
+    void new_stop_limit_order_where_it_activates_when_added(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.SELL, 200, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 15000));
+        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
+        OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(11);
     }
 }
