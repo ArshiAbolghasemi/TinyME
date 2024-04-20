@@ -7,6 +7,7 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.messaging.Message;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.List;
 
@@ -22,12 +23,9 @@ public class Security {
     private OrderBook orderBook = new OrderBook();
     @Builder.Default
     private OrderBook stopLimitOrderBook = new OrderBook();
+    @Setter
     @Builder.Default
     private int lastTradePrice = 0;
-
-    public void setLastTradePrice(int lastTradePrice) {
-        this.lastTradePrice = lastTradePrice;
-    }
 
     public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
         if (enterOrderRq.getSide() == Side.SELL &&
