@@ -9,6 +9,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.LinkedList;
 import java.util.List;
 
 @Getter
@@ -22,16 +23,16 @@ public class Security {
     @Builder.Default
     private OrderBook orderBook = new OrderBook();
     @Builder.Default
-    private OrderBook stopLimitOrderBook = new OrderBook();
+    private List<Order> stopLimitOrderList = new LinkedList<>();
     @Setter
     @Builder.Default
     private int lastTradePrice = 0;
 
-    public MatchResult newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
+    public List<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
         if (enterOrderRq.getSide() == Side.SELL &&
                 !shareholder.hasEnoughPositionsOn(this,
                 orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity()))
-            return MatchResult.notEnoughPositions();
+            return List.of(MatchResult.notEnoughPositions());
 
         Order order;
         int stopPrice = enterOrderRq.getStopPrice();
@@ -45,7 +46,7 @@ public class Security {
                 order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                         enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                         enterOrderRq.getEntryTime(), OrderStatus.INACTIVE, stopPrice);
-                stopLimitOrderBook.enqueue(order);
+                stopLimitOrderList.add(order);
             }
         }else{
             if (enterOrderRq.getPeakSize() == 0) {
@@ -60,7 +61,7 @@ public class Security {
             }
             return matcher.execute(order, enterOrderRq.getMinimumExecutionQuantity());
         }
-        return MatchResult.notEnoughPositions();
+        return List.of(MatchResult.noMatchingOccurred());
     }
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {

@@ -4,6 +4,7 @@ import ir.ut.se.tinyme.domain.entity.*;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
+import java.util.List;
 import java.util.ListIterator;
 
 @Service
@@ -58,6 +59,19 @@ public class Matcher {
         return MatchResult.executed(newOrder, trades);
     }
 
+    private List<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
+        List<MatchResult> results = new LinkedList<>();
+        for (Order inactiveOrder : security.getStopLimitOrderList()){
+            if ((inactiveOrder.getSide() == Side.BUY && inactiveOrder.getStopPrice()<security.getLastTradePrice()) ||
+                    (inactiveOrder.getSide() == Side.SELL && inactiveOrder.getStopPrice()>security.getLastTradePrice())) {
+                results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
+                        inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
+                        inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
+            }
+        }
+        return results;
+    }
+
     private void rollbackTrades(Order newOrder, LinkedList<Trade> trades) {
         assert newOrder.getSide() == Side.BUY;
         newOrder.getBroker().increaseCreditBy(trades.stream().mapToLong(Trade::getTradedValue).sum());
@@ -69,9 +83,9 @@ public class Matcher {
         }
     }
 
-    private MatchResult processMatchResult(MatchResult result, Order order) {
+    private void processMatchResult(MatchResult result, Order order) {
         if (result.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT)
-            return result;
+            return;
 
         if (result.remainder().getQuantity() > 0) {
             if (order.getSide() == Side.BUY) {
@@ -85,23 +99,28 @@ public class Matcher {
                 trade.getSell().getShareholder().decPosition(trade.getSecurity(), trade.getQuantity());
             }
         }
-        return result;
     }
 
-    public MatchResult execute(Order order) {
-        MatchResult result = match(order);
-        return this.processMatchResult(result, order);
+    public List<MatchResult> execute(Order order) {
+        MatchResult mainReqResult = match(order);
+        this.processMatchResult(mainReqResult, order);
+        List<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
+        results.add(mainReqResult);
+        return results;
     }
 
-    public MatchResult execute(Order order, int minimumExecutionQuantity) {
+    public List<MatchResult> execute(Order order, int minimumExecutionQuantity) {
         assert order.getStatus() == OrderStatus.NEW;
 
         MatchResult result = match(order);
         if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
             rollbackTrades(order, result.trades());
-            return MatchResult.minimumExecutionQuantityNotMet();
+            return List.of(MatchResult.minimumExecutionQuantityNotMet());
         }
-        return this.processMatchResult(result, order);
+        this.processMatchResult(result, order);
+        List<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
+        results.add(result);
+        return results;
     }
 
     private boolean isMinimumExecutionQuantityMet(MatchResult result, int minimumExecutionQuantity) {
