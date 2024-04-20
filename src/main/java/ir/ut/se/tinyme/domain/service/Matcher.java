@@ -59,14 +59,15 @@ public class Matcher {
         return MatchResult.executed(newOrder, trades);
     }
 
-    private List<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
-        List<MatchResult> results = new LinkedList<>();
+    private LinkedList<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
+        LinkedList<MatchResult> results = new LinkedList<>();
         for (Order inactiveOrder : security.getStopLimitOrderList()){
             if ((inactiveOrder.getSide() == Side.BUY && inactiveOrder.getStopPrice()<security.getLastTradePrice()) ||
                     (inactiveOrder.getSide() == Side.SELL && inactiveOrder.getStopPrice()>security.getLastTradePrice())) {
                 results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
                         inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
                         inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
+                security.getStopLimitOrderList().remove(inactiveOrder);
             }
         }
         return results;
@@ -101,24 +102,24 @@ public class Matcher {
         }
     }
 
-    public List<MatchResult> execute(Order order) {
+    public LinkedList<MatchResult> execute(Order order) {
         MatchResult mainReqResult = match(order);
         this.processMatchResult(mainReqResult, order);
-        List<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
+        LinkedList<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
         results.add(mainReqResult);
         return results;
     }
 
-    public List<MatchResult> execute(Order order, int minimumExecutionQuantity) {
+    public LinkedList<MatchResult> execute(Order order, int minimumExecutionQuantity) {
         assert order.getStatus() == OrderStatus.NEW;
 
         MatchResult result = match(order);
         if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
             rollbackTrades(order, result.trades());
-            return List.of(MatchResult.minimumExecutionQuantityNotMet());
+            return (LinkedList<MatchResult>) List.of(MatchResult.minimumExecutionQuantityNotMet());
         }
         this.processMatchResult(result, order);
-        List<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
+        LinkedList<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
         results.add(result);
         return results;
     }
