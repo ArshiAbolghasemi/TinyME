@@ -104,8 +104,23 @@ public class OrderHandler {
             errors.add(Message.INVALID_PEAK_SIZE);
         if (!this.isValidMinimumExecutionQuantityRange(enterOrderRq))
             errors.add(Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE);
+
+        checkTheStopLimitConditions(enterOrderRq, errors);
+
         if (!errors.isEmpty())
             throw new InvalidRequestException(errors);
+    }
+
+    private void checkTheStopLimitConditions(EnterOrderRq enterOrderRq,List<String> errors){
+        int stopPrice = enterOrderRq.getStopPrice();
+        if ( stopPrice < 0)
+            errors.add(Message.INVALID_STOP_PRICE_VALUE);
+        if (stopPrice != 0 && enterOrderRq.getPeakSize() != 0){
+            errors.add(Message.ICEBERG_ORDERS_CANT_BE_STOP_PRICE_ORDERS);
+        }
+        if (stopPrice != 0 && enterOrderRq.getMinimumExecutionQuantity() != 0){
+           errors.add(Message.MEQ_ORDERS_CANT_BE_STOP_PRICE_ORDERS);
+        }
     }
 
     private boolean isValidMinimumExecutionQuantityRange(EnterOrderRq enterOrderRq) {

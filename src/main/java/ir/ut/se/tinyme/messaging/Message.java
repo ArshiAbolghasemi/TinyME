@@ -16,4 +16,7 @@ public class Message {
     public static final String SELLER_HAS_NOT_ENOUGH_POSITIONS = "Seller has not enough positions";
     public static final String INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE = "Minimum Execution Quantity is out of range";
     public static final String COULD_NOT_UPDATE_MEQ = "Could Not Update MEQ";
+    public static final String INVALID_STOP_PRICE_VALUE = "StopPrice is invalid";
+    public static final String ICEBERG_ORDERS_CANT_BE_STOP_PRICE_ORDERS = "Iceberg orders can't be stop price orders";
+    public static final String MEQ_ORDERS_CANT_BE_STOP_PRICE_ORDERS = "MEQ orders can't be stop price orders";
 }
