@@ -20,6 +20,7 @@ import org.springframework.test.annotation.DirtiesContext;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -119,12 +120,14 @@ public class MinimumExecQuantityTest {
     }
 
     @Test
-    void new_order_where_order_does_not_matches(){
+    void new_order_where_order_does_not_match(){
         Order newOrder = new Order(11, security, Side.BUY, 304, 300, broker, shareholder,
                 LocalDateTime.now() ,100);
         OrderBook baseOrderBook = security.getOrderBook();
-        MatchResult matchResult = matcher.execute(newOrder, newOrder.getMinimumExecutionQuantity());
-        assertThat(matchResult).isEqualTo(MatchResult.minimumExecutionQuantityNotMet());
+        LinkedList<MatchResult> results =  matcher.execute(newOrder, newOrder.getMinimumExecutionQuantity());;
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
+        assertThat(result).isEqualTo(MatchResult.minimumExecutionQuantityNotMet());
         assertThat(security.getOrderBook()).isEqualTo(baseOrderBook);
     }
 }

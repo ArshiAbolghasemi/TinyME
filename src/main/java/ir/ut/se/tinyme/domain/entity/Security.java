@@ -29,10 +29,12 @@ public class Security {
     private int lastTradePrice = 0;
 
     public LinkedList<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
-        if (enterOrderRq.getSide() == Side.SELL &&
-                !shareholder.hasEnoughPositionsOn(this,
-                orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity()))
-            return (LinkedList<MatchResult>) List.of(MatchResult.notEnoughPositions());
+        LinkedList<MatchResult> results = new LinkedList<>();
+        if (enterOrderRq.getSide() == Side.SELL && !shareholder.hasEnoughPositionsOn(this,
+                orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity())){
+            results.add(MatchResult.notEnoughPositions());
+            return results ;
+        }
 
         Order order;
         int stopPrice = enterOrderRq.getStopPrice();
@@ -61,7 +63,8 @@ public class Security {
             }
             return matcher.execute(order, enterOrderRq.getMinimumExecutionQuantity());
         }
-        return (LinkedList<MatchResult>) List.of(MatchResult.noMatchingOccurred());
+        results.add(MatchResult.noMatchingOccurred());
+        return results;
     }
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
@@ -74,6 +77,7 @@ public class Security {
     }
 
     public LinkedList<MatchResult> updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
+        LinkedList<MatchResult> results = new LinkedList<>();
         Order order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
         if (order == null)
             throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
@@ -87,8 +91,11 @@ public class Security {
 
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
-                orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity()))
-            return (LinkedList<MatchResult>) List.of(MatchResult.notEnoughPositions());
+                orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())){
+            results.add(MatchResult.notEnoughPositions());
+            return results;
+        }
+
 
         boolean losesPriority = order.isQuantityIncreased(updateOrderRq.getQuantity())
                 || updateOrderRq.getPrice() != order.getPrice()
@@ -103,11 +110,12 @@ public class Security {
             if (updateOrderRq.getSide() == Side.BUY) {
                 order.getBroker().decreaseCreditBy(order.getValue());
             }
-            return (LinkedList<MatchResult>) List.of(MatchResult.executed(null, List.of()));
+            results.add(MatchResult.executed(null, List.of()));
+            return results;
         }
 
         orderBook.removeByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
-        LinkedList<MatchResult> results = matcher.execute(order);
+        results = matcher.execute(order);
         if (results.getLast().outcome() != MatchingOutcome.EXECUTED) {
             orderBook.enqueue(originalOrder);
             if (updateOrderRq.getSide() == Side.BUY) {

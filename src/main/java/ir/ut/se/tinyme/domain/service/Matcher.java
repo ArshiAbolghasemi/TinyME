@@ -112,14 +112,16 @@ public class Matcher {
 
     public LinkedList<MatchResult> execute(Order order, int minimumExecutionQuantity) {
         assert order.getStatus() == OrderStatus.NEW;
+        LinkedList<MatchResult> results = new LinkedList<>();
 
         MatchResult result = match(order);
         if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
             rollbackTrades(order, result.trades());
-            return (LinkedList<MatchResult>) List.of(MatchResult.minimumExecutionQuantityNotMet());
+            results.add(MatchResult.minimumExecutionQuantityNotMet());
+            return results;
         }
         this.processMatchResult(result, order);
-        LinkedList<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
+        results = checkAndActivateStopLimitOrderBook(order.getSecurity());
         results.add(result);
         return results;
     }

@@ -85,7 +85,7 @@ class SecurityTest {
                 LocalDateTime.now(), Side.SELL, 350, 15700, 0, 0, 0,
                 0);
         assertThatNoException().isThrownBy(() ->
-                assertThat(security.updateOrder(updateOrderRq, matcher).trades()).isNotEmpty()
+                assertThat(security.updateOrder(updateOrderRq, matcher).getLast().trades()).isNotEmpty()
         );
     }
 
