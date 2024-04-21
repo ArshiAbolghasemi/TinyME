@@ -6,6 +6,7 @@ import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.Message;
 import ir.ut.se.tinyme.messaging.event.*;
+import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.repository.BrokerRepository;
 import ir.ut.se.tinyme.repository.SecurityRepository;
@@ -324,7 +325,30 @@ public class StopLimitOrderTest {
         assertThat(broker.getCredit()).isEqualTo(100_000_000L - 5 * 200);
     }
 
+    @Test
+    void check_delete_a_stoplimit_order_which_is_inactive(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 150, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        mockOrderHandler.handleDeleteOrder( new DeleteOrderRq( 6, security.getIsin(), Side.BUY, 14));
+        ArgumentCaptor<OrderDeletedEvent> orderDeletedEventArgumentCaptor = ArgumentCaptor.forClass(OrderDeletedEvent.class);
+        verify(mockEventPublisher).publish(orderDeletedEventArgumentCaptor.capture());
+        OrderDeletedEvent outputEvent = orderDeletedEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        assertThat(security.getStopLimitOrderList().getBuyQueue().isEmpty());
+    }
 
-
+    @Test
+    void check_delete_a_stoplimit_order_which_is_active(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 150, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 9));
+        mockOrderHandler.handleDeleteOrder( new DeleteOrderRq( 6, security.getIsin(), Side.BUY, 14));
+        ArgumentCaptor<OrderDeletedEvent> orderDeletedEventArgumentCaptor = ArgumentCaptor.forClass(OrderDeletedEvent.class);
+        verify(mockEventPublisher).publish(orderDeletedEventArgumentCaptor.capture());
+        OrderDeletedEvent outputEvent = orderDeletedEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        assertThat(security.getOrderBook().getBuyQueue().size()).isEqualTo(5);
+    }
 
 }
