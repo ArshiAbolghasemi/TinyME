@@ -50,6 +50,9 @@ public class Security {
         int stopPrice = enterOrderRq.getStopPrice();
         if (stopPrice != 0){
             if ((enterOrderRq.getSide() == Side.SELL && stopPrice >= lastTradePrice) || (enterOrderRq.getSide() == Side.BUY && stopPrice <= lastTradePrice)) {
+                if (enterOrderRq.getSide() == Side.BUY) {
+                    broker.increaseCreditBy((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity());
+                }
                 order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                         enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                         enterOrderRq.getEntryTime(), OrderStatus.ACTIVE);
@@ -79,8 +82,13 @@ public class Security {
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
         Order order = orderBook.findByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
-        if (order == null)
-            throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
+
+        if (order == null){
+            order = stopLimitOrderList.findByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
+            if (order == null){
+                throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
+            }
+        }
         if (order.getSide() == Side.BUY)
             order.getBroker().increaseCreditBy(order.getValue());
         orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
