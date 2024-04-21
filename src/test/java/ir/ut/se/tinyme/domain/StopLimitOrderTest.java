@@ -275,7 +275,7 @@ public class StopLimitOrderTest {
     }
 
     @Test
-    void check_update_stoplimit_order_which_is_active(){
+    void check_update_quantity_of_a_sell_stoplimit_order_which_is_active(){
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
                 LocalDateTime.now(), Side.SELL, 5, 15790, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 11));
@@ -289,9 +289,42 @@ public class StopLimitOrderTest {
         verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
         OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
         assertThat(outputEvent.getOrderId()).isEqualTo(14);
-
-
+//        assertThat(broker.getCredit()).isEqualTo(100_000_000L - 10 * 15790);
     }
+
+    @Test
+    void check_update_quantity_of_a_buy_stoplimit_order_which_is_inactive(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 150, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createUpdateStopLimitOrderRq(5, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 15, 150, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        ArgumentCaptor<OrderUpdatedEvent> orderUpdatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderUpdatedEvent.class);
+        verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
+        OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        assertThat(broker.getCredit()).isEqualTo(100_000_000L - 15 * 150);
+    }
+
+
+
+    @Test
+    void check_update_price_of_a_stoplimit_order_which_is_inactive(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 150, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createUpdateStopLimitOrderRq(5, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 200, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        ArgumentCaptor<OrderUpdatedEvent> orderUpdatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderUpdatedEvent.class);
+        verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
+        OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        assertThat(broker.getCredit()).isEqualTo(100_000_000L - 5 * 200);
+    }
+
+
 
 
 }

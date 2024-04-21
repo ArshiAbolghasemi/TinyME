@@ -88,7 +88,14 @@ public class Security {
 
     public LinkedList<MatchResult> updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         LinkedList<MatchResult> results = new LinkedList<>();
-        Order order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
+        Order order;
+        if(updateOrderRq.getStopPrice() != 0)
+        {
+            order = stopLimitOrderList.findByOrderId(updateOrderRq.getSide(),updateOrderRq.getOrderId());
+        }
+        else {
+            order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
+        }
         if (order == null)
             throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
         if ((order instanceof IcebergOrder) && updateOrderRq.getPeakSize() == 0)
