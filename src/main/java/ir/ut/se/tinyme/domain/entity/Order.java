@@ -162,7 +162,7 @@ public class Order {
     }
 
     public void queue() {
-        if (stopPrice != 0) return;
+        if (stopPrice != 0 && status == OrderStatus.INACTIVE) return;
 
         status = OrderStatus.QUEUED;
     }
