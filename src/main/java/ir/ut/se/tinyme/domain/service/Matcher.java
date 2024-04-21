@@ -59,15 +59,23 @@ public class Matcher {
     }
 
     private LinkedList<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
-        // this part has a little bug i think
+        // this part has a little bug I think
         LinkedList<MatchResult> results = new LinkedList<>();
-        for (Order inactiveOrder : security.getStopLimitOrderList()){
-            if ((inactiveOrder.getSide() == Side.BUY && inactiveOrder.getStopPrice() <= security.getLastTradePrice()) ||
-                    (inactiveOrder.getSide() == Side.SELL && inactiveOrder.getStopPrice() >= security.getLastTradePrice())) {
+
+        for (Order inactiveOrder : security.getStopLimitOrderList().getSellQueue()){
+            if (inactiveOrder.getStopPrice() >= security.getLastTradePrice()) {
                 results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
                         inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
                         inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
-                security.getStopLimitOrderList().remove(inactiveOrder);
+                security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
+            }
+        }
+        for (Order inactiveOrder : security.getStopLimitOrderList().getBuyQueue()){
+            if (inactiveOrder.getStopPrice() <= security.getLastTradePrice()) {
+                results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
+                        inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
+                        inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
+                security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
             }
         }
         return results;

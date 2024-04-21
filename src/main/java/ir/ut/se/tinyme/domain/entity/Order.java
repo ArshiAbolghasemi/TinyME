@@ -143,13 +143,27 @@ public class Order {
 
     public boolean queuesBefore(Order order) {
         if (order.getSide() == Side.BUY) {
-            return price > order.getPrice();
+            return stopPrice == 0 ?
+                    price > order.getPrice() :
+                    (
+                            price != order.getPrice() ?
+                                    price > order.getPrice() :
+                                    entryTime.isBefore(order.getEntryTime())
+                    );
         } else {
-            return price < order.getPrice();
+            return stopPrice == 0 ?
+                    price < order.getPrice() :
+                    (
+                            price != order.getPrice() ?
+                                    price > order.getPrice() :
+                                    entryTime.isBefore(order.getEntryTime())
+                    );
         }
     }
 
     public void queue() {
+        if (stopPrice != 0) return;
+
         status = OrderStatus.QUEUED;
     }
 

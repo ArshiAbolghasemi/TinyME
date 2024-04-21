@@ -25,19 +25,10 @@ public class Security {
     @Builder.Default
     private OrderBook orderBook = new OrderBook();
     @Builder.Default
-    private List<Order> stopLimitOrderList = new LinkedList<>();
+    private OrderBook stopLimitOrderList = new OrderBook();
     @Setter
     @Builder.Default
     private int lastTradePrice = 0;
-
-    private void sortStopLimitOrderList() {
-        this.stopLimitOrderList.sort((o1, o2) -> {
-            if (o1.getStopPrice() == o2.getStopPrice()) {
-                return o1.getEntryTime().compareTo(o2.getEntryTime());
-            }
-            return o1.getStopPrice() - o2.getStopPrice();
-        });
-    }
 
     public LinkedList<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
         LinkedList<MatchResult> results = new LinkedList<>();
@@ -59,8 +50,7 @@ public class Security {
                 order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                         enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                         enterOrderRq.getEntryTime(), OrderStatus.INACTIVE, stopPrice);
-                stopLimitOrderList.add(order);
-                sortStopLimitOrderList();
+                stopLimitOrderList.enqueue(order);
             }
         }else{
             if (enterOrderRq.getPeakSize() == 0) {

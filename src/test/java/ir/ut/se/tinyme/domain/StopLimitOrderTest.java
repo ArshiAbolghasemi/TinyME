@@ -163,8 +163,8 @@ public class StopLimitOrderTest {
                 LocalDateTime.now(), Side.SELL, 5, 15820, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 2));
 
-        assertThat(security.getStopLimitOrderList().get(0).getOrderId()).isEqualTo(11);
-        assertThat(security.getStopLimitOrderList().get(1).getOrderId()).isEqualTo(12);
-        assertThat(security.getStopLimitOrderList().get(2).getOrderId()).isEqualTo(13);
+        assertThat(security.getStopLimitOrderList().getSellQueue().get(0).getOrderId()).isEqualTo(11);
+        assertThat(security.getStopLimitOrderList().getSellQueue().get(1).getOrderId()).isEqualTo(12);
+        assertThat(security.getStopLimitOrderList().getSellQueue().get(2).getOrderId()).isEqualTo(13);
     }
 }
