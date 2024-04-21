@@ -50,11 +50,12 @@ public class Matcher {
                 return MatchResult.notEnoughCredit();
             }
         }
+
         if(!trades.isEmpty()){
             newOrder.getSecurity().setLastTradePrice(trades.getLast().getPrice());
         }
         if (newOrder.getStatus() == OrderStatus.ACTIVE){
-            return MatchResult.stopLimitOrderActivated (newOrder, trades);
+            return MatchResult.stopLimitOrderActivated (newOrder);
         }
         return MatchResult.executed(newOrder, trades);
     }

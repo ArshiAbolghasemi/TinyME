@@ -14,5 +14,4 @@ import java.util.List;
 @NoArgsConstructor
 public class OrderActivatedEvent extends Event{
     private long orderId;
-    private List<TradeDTO> trades;
 }

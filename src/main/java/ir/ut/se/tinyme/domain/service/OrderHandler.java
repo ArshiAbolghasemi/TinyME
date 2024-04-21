@@ -47,8 +47,7 @@ public class OrderHandler {
                 return;
             }
             if (matchResult.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
-                eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getOrderId(),
-                        matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+                eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getOrderId()));
             }
             if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
                 eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
