@@ -38,6 +38,14 @@ public class Security {
             return results ;
         }
 
+        if (enterOrderRq.getSide() == Side.BUY && enterOrderRq.getStopPrice() != 0) {
+            if (!broker.hasEnoughCredit((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity())) {
+                results.add(MatchResult.notEnoughCredit());
+                return results;
+            }
+            broker.decreaseCreditBy((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity());
+        }
+
         Order order;
         int stopPrice = enterOrderRq.getStopPrice();
         if (stopPrice != 0){
@@ -106,6 +114,21 @@ public class Security {
             return results;
         }
 
+        if (order.getStopPrice() != 0 && order.getStatus() == OrderStatus.INACTIVE) {
+            if (order.getSide() == Side.BUY) {
+                order.getBroker().increaseCreditBy(order.getValue());
+            }
+            if (updateOrderRq.getSide() == Side.BUY && !order.getBroker().hasEnoughCredit(
+                    (long) updateOrderRq.getPrice() * updateOrderRq.getQuantity())) {
+                results.add(MatchResult.notEnoughCredit());
+                return results;
+            }
+            order.updateFromRequest(updateOrderRq);
+            if (order.getSide() == Side.BUY) {
+                order.getBroker().decreaseCreditBy(order.getValue());
+            }
+            return results;
+        }
 
         boolean losesPriority = order.isQuantityIncreased(updateOrderRq.getQuantity())
                 || updateOrderRq.getPrice() != order.getPrice()
@@ -121,10 +144,6 @@ public class Security {
                 order.getBroker().decreaseCreditBy(order.getValue());
             }
             results.add(MatchResult.executed(null, List.of()));
-            return results;
-        }
-
-        if (order.getStopPrice() != 0) {
             return results;
         }
 

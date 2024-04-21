@@ -18,7 +18,7 @@ public class Matcher {
                 break;
 
             Trade trade = new Trade(newOrder.getSecurity(), matchingOrder.getPrice(), Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
-            if (newOrder.getSide() == Side.BUY) {
+            if (newOrder.getStopPrice() == 0 && newOrder.getSide() == Side.BUY) {
                 if (trade.buyerHasEnoughCredit())
                     trade.decreaseBuyersCredit();
                 else {
@@ -44,7 +44,8 @@ public class Matcher {
             }
         }
         if (newOrder.getQuantity() > 0 && newOrder.getSide() == Side.BUY){
-            if (!newOrder.getBroker().hasEnoughCredit((long)newOrder.getPrice() * newOrder.getQuantity())) {
+            if (newOrder.getStopPrice() == 0 &&
+                    !newOrder.getBroker().hasEnoughCredit((long)newOrder.getPrice() * newOrder.getQuantity())) {
                 rollbackTrades(newOrder,trades);
                 return MatchResult.notEnoughCredit();
             }
@@ -97,7 +98,7 @@ public class Matcher {
             return;
 
         if (result.remainder().getQuantity() > 0) {
-            if (order.getSide() == Side.BUY) {
+            if (order.getStopPrice() == 0 && order.getSide() == Side.BUY) {
                 order.getBroker().decreaseCreditBy((long)order.getPrice() * order.getQuantity());
             }
             order.getSecurity().getOrderBook().enqueue(result.remainder());
