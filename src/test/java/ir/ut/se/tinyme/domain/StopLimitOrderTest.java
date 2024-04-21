@@ -246,5 +246,20 @@ public class StopLimitOrderTest {
 
     }
 
+    @Test
+    void check_update_non_stoplimit_order_with_stopprice(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.SELL, 5, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 0));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createUpdateStopLimitOrderRq(5, security.getIsin(), 14,
+                LocalDateTime.now(), Side.SELL, 5, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 5));
+        ArgumentCaptor<OrderRejectedEvent> orderRejectedCaptor = ArgumentCaptor.forClass(OrderRejectedEvent.class);
+        verify(mockEventPublisher).publish(orderRejectedCaptor.capture());
+        OrderRejectedEvent outputEvent = orderRejectedCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        assertThat(outputEvent.getErrors()).containsOnly(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER);
+    }
+
 
 }

@@ -100,7 +100,7 @@ public class Security {
         }
         if (updateOrderRq.getStopPrice() != 0) {
             if (order.getStopPrice() == 0) {
-                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_ORDER_LIMIT_ORDER_THAT_IS_NOT_IN_ACTIVE);
+                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER);
             }
             if (order.getStatus() != OrderStatus.INACTIVE) {
                 throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_ORDER_LIMIT_ORDER_THAT_IS_NOT_IN_ACTIVE);
