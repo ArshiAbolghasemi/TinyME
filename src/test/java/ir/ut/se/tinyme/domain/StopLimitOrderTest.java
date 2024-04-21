@@ -5,10 +5,7 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.Message;
-import ir.ut.se.tinyme.messaging.event.OrderAcceptedEvent;
-import ir.ut.se.tinyme.messaging.event.OrderActivatedEvent;
-import ir.ut.se.tinyme.messaging.event.OrderExecutedEvent;
-import ir.ut.se.tinyme.messaging.event.OrderRejectedEvent;
+import ir.ut.se.tinyme.messaging.event.*;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.repository.BrokerRepository;
 import ir.ut.se.tinyme.repository.SecurityRepository;
@@ -275,6 +272,25 @@ public class StopLimitOrderTest {
         OrderRejectedEvent outputEvent = orderRejectedCaptor.getValue();
         assertThat(outputEvent.getOrderId()).isEqualTo(14);
         assertThat(outputEvent.getErrors()).contains(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);
+    }
+
+    @Test
+    void check_update_stoplimit_order_which_is_active(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.SELL, 5, 15790, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        assertThat(security.getStopLimitOrderList().getSellQueue().isEmpty());
+        assertThat(security.getOrderBook().getSellQueue().get(2).getQuantity()).isEqualTo(5);
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createUpdateStopLimitOrderRq(5, security.getIsin(), 14,
+                LocalDateTime.now(), Side.SELL, 10, 15790, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 0));
+        assertThat(security.getOrderBook().getSellQueue().get(2).getQuantity()).isEqualTo(10);
+        ArgumentCaptor<OrderUpdatedEvent> orderUpdatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderUpdatedEvent.class);
+        verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
+        OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+
+
     }
 
 
