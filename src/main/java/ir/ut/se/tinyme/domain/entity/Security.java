@@ -9,6 +9,8 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,6 +29,15 @@ public class Security {
     @Setter
     @Builder.Default
     private int lastTradePrice = 0;
+
+    private void sortStopLimitOrderList() {
+        stopLimitOrderList.sort((o1, o2) -> {
+            if (o1.getStopPrice() == o2.getStopPrice()) {
+                return o1.getEntryTime().compareTo(o2.getEntryTime());
+            }
+            return o1.getStopPrice() - o2.getStopPrice();
+        });
+    }
 
     public LinkedList<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
         LinkedList<MatchResult> results = new LinkedList<>();
@@ -49,6 +60,7 @@ public class Security {
                         enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                         enterOrderRq.getEntryTime(), OrderStatus.INACTIVE, stopPrice);
                 stopLimitOrderList.add(order);
+                sortStopLimitOrderList();
             }
         }else{
             if (enterOrderRq.getPeakSize() == 0) {

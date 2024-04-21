@@ -25,8 +25,8 @@ public final class MatchResult {
         return new MatchResult(MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET, null, new LinkedList<>());
     }
 
-    public static MatchResult stopLimitOrderActivated(Order remainder) {
-        return new MatchResult(MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED, remainder, new LinkedList<>());
+    public static MatchResult stopLimitOrderActivated(Order remainder, List<Trade> trades) {
+        return new MatchResult(MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED, remainder, new LinkedList<>(trades));
     }
 
     public static MatchResult noMatchingOccurred(){

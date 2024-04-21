@@ -4,7 +4,6 @@ import ir.ut.se.tinyme.domain.entity.*;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
-import java.util.List;
 import java.util.ListIterator;
 
 @Service
@@ -50,17 +49,17 @@ public class Matcher {
                 return MatchResult.notEnoughCredit();
             }
         }
-
         if(!trades.isEmpty()){
             newOrder.getSecurity().setLastTradePrice(trades.getLast().getPrice());
         }
         if (newOrder.getStatus() == OrderStatus.ACTIVE){
-            return MatchResult.stopLimitOrderActivated (newOrder);
+            return MatchResult.stopLimitOrderActivated (newOrder, trades);
         }
         return MatchResult.executed(newOrder, trades);
     }
 
     private LinkedList<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
+        // this part has a little bug i think
         LinkedList<MatchResult> results = new LinkedList<>();
         for (Order inactiveOrder : security.getStopLimitOrderList()){
             if ((inactiveOrder.getSide() == Side.BUY && inactiveOrder.getStopPrice() <= security.getLastTradePrice()) ||
