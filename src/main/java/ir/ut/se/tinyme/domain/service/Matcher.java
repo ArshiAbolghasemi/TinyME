@@ -65,18 +65,19 @@ public class Matcher {
 
         for (Order inactiveOrder : security.getStopLimitOrderList().getSellQueue()){
             if (inactiveOrder.getStopPrice() >= security.getLastTradePrice()) {
+                security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
                 results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
                         inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
                         inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
-                security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
+
             }
         }
         for (Order inactiveOrder : security.getStopLimitOrderList().getBuyQueue()){
             if (inactiveOrder.getStopPrice() <= security.getLastTradePrice()) {
+                security.getStopLimitOrderList().getBuyQueue().remove(inactiveOrder);
                 results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
                         inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
                         inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
-                security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
             }
         }
         return results;

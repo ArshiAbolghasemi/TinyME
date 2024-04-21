@@ -7,6 +7,7 @@ import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.Message;
 import ir.ut.se.tinyme.messaging.event.OrderAcceptedEvent;
 import ir.ut.se.tinyme.messaging.event.OrderActivatedEvent;
+import ir.ut.se.tinyme.messaging.event.OrderExecutedEvent;
 import ir.ut.se.tinyme.messaging.event.OrderRejectedEvent;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.repository.BrokerRepository;
@@ -66,7 +67,8 @@ public class StopLimitOrderTest {
                 new Order(7, security, Side.SELL, 285, 15810, broker, shareholder),
                 new Order(8, security, Side.SELL, 800, 15810, broker, shareholder),
                 new Order(9, security, Side.SELL, 340, 15820, broker, shareholder),
-                new Order(10, security, Side.SELL, 65, 200, broker, shareholder)
+                new Order(10, security, Side.SELL, 65, 200, broker, shareholder),
+                new Order(19, security, Side.SELL, 60, 400, broker, shareholder)
         );
         orders.forEach(order -> orderBook.enqueue(order));
         mockEventPublisher = mock(EventPublisher.class, withSettings().verboseLogging());
@@ -143,7 +145,24 @@ public class StopLimitOrderTest {
                 LocalDateTime.now(), Side.SELL, 200, 15820, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 15000));
         ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
         verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
+        verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
+        OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(11);
+    }
+
+    @Test
+    void new_stop_limit_order_where_it_activates_when_added_and_executes_test(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.SELL, 200, 15500, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 15000));
+        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
+        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
+        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
+        verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
+        verify(mockEventPublisher).publish(orderExecutedCaptor.capture());
         OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
         assertThat(outputEvent.getOrderId()).isEqualTo(11);
     }
@@ -206,6 +225,26 @@ public class StopLimitOrderTest {
         assertThat(broker.getCredit()).isEqualTo(100_000_000L);
     }
 
+    @Test
+    void check_activation_after_some_trades_happen_test(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 11,
+                LocalDateTime.now(), Side.BUY, 65, 200, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 0));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(5, security.getIsin(), 12,
+                LocalDateTime.now(), Side.BUY, 5, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 300));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(6, security.getIsin(), 13,
+                LocalDateTime.now(), Side.BUY, 30, 400, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 0));
+        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
+        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
+        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
+        //verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
+        //verify(mockEventPublisher).publish(orderExecutedCaptor.capture());
+        //OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
+
+    }
 
 
 }
