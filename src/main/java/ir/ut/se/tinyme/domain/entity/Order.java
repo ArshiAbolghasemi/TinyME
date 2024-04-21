@@ -58,20 +58,6 @@ public class Order {
         this.stopPrice = stopPrice;
     }
 
-    /*public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker,
-                 Shareholder shareholder, LocalDateTime entryTime, OrderStatus status, int minimumExecutionQuantity) {
-        this.orderId = orderId;
-        this.security = security;
-        this.side = side;
-        this.quantity = quantity;
-        this.price = price;
-        this.entryTime = entryTime;
-        this.broker = broker;
-        this.shareholder = shareholder;
-        this.status = status;
-        this.minimumExecutionQuantity = minimumExecutionQuantity;
-    }*/
-
     public Order(long orderId, Security security, Side side, int quantity, int price, Broker broker,
                  Shareholder shareholder, LocalDateTime entryTime, OrderStatus status) {
         this.orderId = orderId;
@@ -145,16 +131,16 @@ public class Order {
         if (order.getSide() == Side.BUY) {
             return (stopPrice != 0 && status == OrderStatus.INACTIVE)  ?
                     (
-                            price != order.getPrice() ?
-                                    price > order.getPrice() :
+                            stopPrice != order.getStopPrice() ?
+                                    stopPrice < order.getStopPrice() :
                                     entryTime.isBefore(order.getEntryTime())
                     ) :
                     price > order.getPrice();
         } else {
             return (stopPrice != 0 && status == OrderStatus.INACTIVE) ?
                     (
-                            price != order.getPrice() ?
-                                    price > order.getPrice() :
+                            stopPrice != order.getStopPrice() ?
+                                    stopPrice > order.getStopPrice() :
                                     entryTime.isBefore(order.getEntryTime())
                     ) :
                     price < order.getPrice();

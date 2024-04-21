@@ -48,7 +48,7 @@ public class StopLimitOrderTest {
 
     @BeforeEach
     void setupOrderBook() {
-        security = Security.builder().isin("ABC").build();
+        security = Security.builder().isin("ABC").lastTradePrice(10).build();
         securityRepository.addSecurity(security);
         broker = Broker.builder().brokerId(1).credit(100_000_000L).build();
         brokerRepository.addBroker(broker);
@@ -149,10 +149,10 @@ public class StopLimitOrderTest {
     }
 
     @Test
-    void inactive_stop_limit_order_list_sort_function_test(){
+    void inactive_stop_limit_order_list_sell_sort_function_test(){
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
-                LocalDateTime.now(), Side.SELL, 50, 1500, broker.getBrokerId(),
-                shareholder.getShareholderId(), 0, 0, 0));
+                LocalDateTime.now(), Side.SELL, 5, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 5));
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
                 LocalDateTime.now(), Side.SELL, 3, 15820, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 1));
@@ -163,8 +163,31 @@ public class StopLimitOrderTest {
                 LocalDateTime.now(), Side.SELL, 5, 15820, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 2));
 
-        assertThat(security.getStopLimitOrderList().getSellQueue().get(0).getOrderId()).isEqualTo(11);
+        assertThat(security.getStopLimitOrderList().getSellQueue().get(0).getOrderId()).isEqualTo(14);
         assertThat(security.getStopLimitOrderList().getSellQueue().get(1).getOrderId()).isEqualTo(12);
         assertThat(security.getStopLimitOrderList().getSellQueue().get(2).getOrderId()).isEqualTo(13);
+        assertThat(security.getStopLimitOrderList().getSellQueue().get(3).getOrderId()).isEqualTo(11);
     }
+
+    @Test
+    void inactive_stop_limit_order_list_buy_sort_function_test(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 50));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.BUY, 3, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 300));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(2, security.getIsin(), 12,
+                LocalDateTime.now(), Side.BUY, 4, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 200));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(3, security.getIsin(), 13,
+                LocalDateTime.now(), Side.BUY, 5, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 200));
+
+        assertThat(security.getStopLimitOrderList().getBuyQueue().get(0).getOrderId()).isEqualTo(14);
+        assertThat(security.getStopLimitOrderList().getBuyQueue().get(1).getOrderId()).isEqualTo(12);
+        assertThat(security.getStopLimitOrderList().getBuyQueue().get(2).getOrderId()).isEqualTo(13);
+        assertThat(security.getStopLimitOrderList().getBuyQueue().get(3).getOrderId()).isEqualTo(11);
+    }
+
 }
