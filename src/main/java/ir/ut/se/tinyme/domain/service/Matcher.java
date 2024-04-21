@@ -75,6 +75,7 @@ public class Matcher {
         for (Order inactiveOrder : security.getStopLimitOrderList().getBuyQueue()){
             if (inactiveOrder.getStopPrice() <= security.getLastTradePrice()) {
                 security.getStopLimitOrderList().getBuyQueue().remove(inactiveOrder);
+                inactiveOrder.getBroker().increaseCreditBy((long)inactiveOrder.getPrice() * inactiveOrder.getQuantity());
                 results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
                         inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
                         inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));

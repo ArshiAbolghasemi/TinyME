@@ -289,8 +289,6 @@ public class StopLimitOrderTest {
         verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
         OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
         assertThat(outputEvent.getOrderId()).isEqualTo(14);
-
-
     }
 
 
