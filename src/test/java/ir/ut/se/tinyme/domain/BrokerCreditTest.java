@@ -60,7 +60,9 @@ public class BrokerCreditTest {
     void new_buy_order_matches_with_entire_sell_queue_with_remain_quantity() {
         Order newOrder = new Order(11, security, Side.BUY, 2000, 15820, buyerBroker,
                 buyerShareholder);
-        MatchResult result = matcher.execute(newOrder);
+        LinkedList<MatchResult> results =  matcher.execute(newOrder);
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
         Order remainder = result.remainder();
         assertThat(result.trades().size()).isEqualTo(5);
         assertThat(remainder.getOrderId()).isEqualTo(11);
@@ -82,8 +84,9 @@ public class BrokerCreditTest {
     void new_buy_order_matches_partially_with_seller_orders() {
         Order newOrder = new Order(11, security, Side.BUY, 1000, 15810, buyerBroker,
                 buyerShareholder);
-
-        MatchResult result = matcher.execute(newOrder);
+        LinkedList<MatchResult> results =  matcher.execute(newOrder);
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
         LinkedList<Trade> trades = result.trades();
         assertThat(trades.size()).isEqualTo(3);
         assertThat(trades.getLast().getQuantity()).isEqualTo(365);
@@ -104,7 +107,9 @@ public class BrokerCreditTest {
     void new_buy_order_not_match_any_sell_order() {
         Order newOrder = new Order(11, security, Side.BUY, 1000, 10_000, buyerBroker,
                 buyerShareholder);
-        MatchResult result = matcher.execute(newOrder);
+        LinkedList<MatchResult> results =  matcher.execute(newOrder);
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
         assertThat(result.trades()).isEmpty();
         assertThat(result.remainder()).isEqualTo(newOrder);
 
@@ -120,8 +125,9 @@ public class BrokerCreditTest {
         buyerBroker.decreaseCreditBy(90_000_000L);
         Order newOrder = new Order(11, security, Side.BUY, 1000, 15810, buyerBroker,
                 buyerShareholder);
-        MatchResult result = matcher.execute(newOrder);
-
+        LinkedList<MatchResult> results =  matcher.execute(newOrder);
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
         assertThat(result.remainder()).isNull();
         assertThat(result.trades()).isEmpty();
         assertThat(result.outcome()).isEqualTo(MatchingOutcome.NOT_ENOUGH_CREDIT);
@@ -148,7 +154,9 @@ public class BrokerCreditTest {
         Order newBuyOrder = new Order(12, security, Side.BUY, 2000, 15820, buyerBroker,
                 buyerShareholder);
 
-        MatchResult result = matcher.execute(newBuyOrder);
+        LinkedList<MatchResult> results =  matcher.execute(newBuyOrder);
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
 
         Order remainder = result.remainder();
         assertThat(result.trades().size()).isEqualTo(7);
@@ -165,7 +173,9 @@ public class BrokerCreditTest {
         Order newBuyOrder = new Order(11, security, Side.SELL, 2500, 15000, sellerBroker,
                 sellerShareholder);
 
-        MatchResult result = matcher.execute(newBuyOrder);
+        LinkedList<MatchResult> results =  matcher.execute(newBuyOrder);
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
         Order remainder = result.remainder();
         assertThat(result.trades().size()).isEqualTo(5);
         assertThat(remainder.getQuantity()).isEqualTo(182);
@@ -183,7 +193,9 @@ public class BrokerCreditTest {
         Order newBuyOrder = new Order(11, security, Side.SELL, 2000, 15000, sellerBroker,
                 sellerShareholder);
 
-        MatchResult result = matcher.execute(newBuyOrder);
+        LinkedList<MatchResult> results =  matcher.execute(newBuyOrder);
+        assertThat(results).hasSize(1);
+        MatchResult result = results.get(0);
         Order remainder = result.remainder();
         assertThat(result.trades().size()).isEqualTo(5);
         assertThat(remainder.getQuantity()).isEqualTo(0);
