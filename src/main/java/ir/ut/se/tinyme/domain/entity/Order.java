@@ -174,6 +174,9 @@ public class Order {
     public void updateFromRequest(EnterOrderRq updateOrderRq) {
         quantity = updateOrderRq.getQuantity();
         price = updateOrderRq.getPrice();
+        if (stopPrice != 0 && status == OrderStatus.INACTIVE) {
+            stopPrice = updateOrderRq.getPrice();
+        }
     }
 
     public long getValue() {

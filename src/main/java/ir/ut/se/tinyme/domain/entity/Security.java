@@ -90,6 +90,14 @@ public class Security {
         if (updateOrderRq.getMinimumExecutionQuantity() != order.getMinimumExecutionQuantity()) {
             throw new InvalidRequestException(Message.COULD_NOT_UPDATE_MEQ);
         }
+        if (updateOrderRq.getStopPrice() != 0) {
+            if (order.getStopPrice() == 0) {
+                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_ORDER_LIMIT_ORDER_THAT_IS_NOT_IN_ACTIVE);
+            }
+            if (order.getStatus() != OrderStatus.INACTIVE) {
+                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_ORDER_LIMIT_ORDER_THAT_IS_NOT_IN_ACTIVE);
+            }
+        }
 
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
@@ -113,6 +121,10 @@ public class Security {
                 order.getBroker().decreaseCreditBy(order.getValue());
             }
             results.add(MatchResult.executed(null, List.of()));
+            return results;
+        }
+
+        if (order.getStopPrice() != 0) {
             return results;
         }
 
