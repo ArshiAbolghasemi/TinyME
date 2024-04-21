@@ -240,9 +240,8 @@ public class StopLimitOrderTest {
         ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
         ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
         verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
-        //verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
-        //verify(mockEventPublisher).publish(orderExecutedCaptor.capture());
-        //OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
+        verify(mockEventPublisher, times(3)).publish(orderAcceptedCaptor.capture());
+        verify(mockEventPublisher, times(3)).publish(orderExecutedCaptor.capture());
 
     }
 
