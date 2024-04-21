@@ -31,7 +31,7 @@ public class Security {
     private int lastTradePrice = 0;
 
     private void sortStopLimitOrderList() {
-        stopLimitOrderList.sort((o1, o2) -> {
+        this.stopLimitOrderList.sort((o1, o2) -> {
             if (o1.getStopPrice() == o2.getStopPrice()) {
                 return o1.getEntryTime().compareTo(o2.getEntryTime());
             }
