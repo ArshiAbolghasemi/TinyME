@@ -215,6 +215,19 @@ public class StopLimitOrderTest {
     }
 
     @Test
+    void check_broker_credit_after_activation() {
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.BUY, 200, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 15800));
+        assertThat(broker.getCredit()).isEqualTo(100_000_000L - 15820*200);
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.BUY, 200, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 0));
+        assertThat(broker.getCredit()).isEqualTo(100_000_000L);
+
+    }
+
+    @Test
     void check_broker_credit_after_new_stop_price_sell_order() {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
                 LocalDateTime.now(), Side.SELL, 200, 15820, broker.getBrokerId(),
