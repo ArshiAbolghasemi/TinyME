@@ -35,6 +35,10 @@ public class OrderHandler {
     }
 
     public void publishEvent(EnterOrderRq enterOrderRq, LinkedList<MatchResult> results) {
+        if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
+            eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
+        else
+            eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
         for (MatchResult matchResult : results) {
             if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
                 eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
@@ -49,10 +53,6 @@ public class OrderHandler {
             if (matchResult.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
                 eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getOrderId()));
             }
-            if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
-                eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
-            else
-                eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
             if (!matchResult.trades().isEmpty()) {
                 eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
                         matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
