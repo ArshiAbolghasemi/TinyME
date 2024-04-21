@@ -100,11 +100,11 @@ public class Security {
         }
         if (updateOrderRq.getStopPrice() != 0) {
             if (order.getStopPrice() == 0) {
-                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER);
+                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);
             }
-            if (order.getStatus() != OrderStatus.INACTIVE) {
-                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_ORDER_LIMIT_ORDER_THAT_IS_NOT_IN_ACTIVE);
-            }
+//            if (order.getStatus() != OrderStatus.INACTIVE) {
+//                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);
+//            }
         }
 
         if (updateOrderRq.getSide() == Side.SELL &&
