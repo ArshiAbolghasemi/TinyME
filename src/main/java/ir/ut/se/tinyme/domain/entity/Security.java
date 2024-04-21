@@ -39,7 +39,7 @@ public class Security {
         Order order;
         int stopPrice = enterOrderRq.getStopPrice();
         if (stopPrice != 0){
-            if ((enterOrderRq.getSide() == Side.SELL && stopPrice > lastTradePrice) || (enterOrderRq.getSide() == Side.BUY && stopPrice < lastTradePrice)) {
+            if ((enterOrderRq.getSide() == Side.SELL && stopPrice >= lastTradePrice) || (enterOrderRq.getSide() == Side.BUY && stopPrice <= lastTradePrice)) {
                 order = new Order(enterOrderRq.getOrderId(), this, enterOrderRq.getSide(),
                         enterOrderRq.getQuantity(), enterOrderRq.getPrice(), broker, shareholder,
                         enterOrderRq.getEntryTime(), OrderStatus.ACTIVE);

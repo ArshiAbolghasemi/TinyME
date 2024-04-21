@@ -63,8 +63,8 @@ public class Matcher {
     private LinkedList<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
         LinkedList<MatchResult> results = new LinkedList<>();
         for (Order inactiveOrder : security.getStopLimitOrderList()){
-            if ((inactiveOrder.getSide() == Side.BUY && inactiveOrder.getStopPrice()<security.getLastTradePrice()) ||
-                    (inactiveOrder.getSide() == Side.SELL && inactiveOrder.getStopPrice()>security.getLastTradePrice())) {
+            if ((inactiveOrder.getSide() == Side.BUY && inactiveOrder.getStopPrice() <= security.getLastTradePrice()) ||
+                    (inactiveOrder.getSide() == Side.SELL && inactiveOrder.getStopPrice() >= security.getLastTradePrice())) {
                 results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
                         inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
                         inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
