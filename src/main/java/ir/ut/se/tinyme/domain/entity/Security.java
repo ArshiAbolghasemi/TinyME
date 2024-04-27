@@ -97,11 +97,12 @@ public class Security {
     public LinkedList<MatchResult> updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {
         LinkedList<MatchResult> results = new LinkedList<>();
         Order order;
-        if(updateOrderRq.getStopPrice() != 0)
-        {
+        if(updateOrderRq.getStopPrice() != 0) {
             order = stopLimitOrderList.findByOrderId(updateOrderRq.getSide(),updateOrderRq.getOrderId());
-        }
-        else {
+            if (order == null) {
+                order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
+            }
+        } else {
             order = orderBook.findByOrderId(updateOrderRq.getSide(), updateOrderRq.getOrderId());
         }
         if (order == null)
