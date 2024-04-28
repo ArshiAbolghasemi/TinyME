@@ -76,27 +76,13 @@ public class Order {
 
     public boolean queuesBefore(Order order) {
         if (order.getSide() == Side.BUY) {
-//            return (stopPrice != 0 && status == OrderStatus.INACTIVE)  ?
-//                    (
-//                            stopPrice != order.getStopPrice() ?
-//                                    stopPrice < order.getStopPrice() :
-//                                    entryTime.isBefore(order.getEntryTime())
-//                    ) :
             return price > order.getPrice();
         } else {
-//            return (stopPrice != 0 && status == OrderStatus.INACTIVE) ?
-//                    (
-//                            stopPrice != order.getStopPrice() ?
-//                                    stopPrice > order.getStopPrice() :
-//                                    entryTime.isBefore(order.getEntryTime())
-//                    ) :
             return price < order.getPrice();
         }
     }
 
     public void queue() {
-//        if (stopPrice != 0 && status == OrderStatus.INACTIVE) return;
-
         status = OrderStatus.QUEUED;
     }
 
@@ -107,9 +93,6 @@ public class Order {
     public void updateFromRequest(EnterOrderRq updateOrderRq) {
         quantity = updateOrderRq.getQuantity();
         price = updateOrderRq.getPrice();
-//        if (stopPrice != 0 && status == OrderStatus.INACTIVE) {
-//            stopPrice = updateOrderRq.getPrice();
-//        }
     }
 
     public long getValue() {
