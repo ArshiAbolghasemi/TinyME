@@ -38,6 +38,7 @@ public class Order {
                 .shareholder(shareholder)
                 .entryTime(entryTime)
                 .status(OrderStatus.SNAPSHOT)
+                .minimumExecutionQuantity(minimumExecutionQuantity)
                 .build();
     }
 
@@ -52,6 +53,7 @@ public class Order {
                 .shareholder(shareholder)
                 .entryTime(entryTime)
                 .status(OrderStatus.SNAPSHOT)
+                .minimumExecutionQuantity(minimumExecutionQuantity)
                 .build();
     }
 

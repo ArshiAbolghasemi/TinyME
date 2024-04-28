@@ -30,6 +30,7 @@ public class IcebergOrder extends Order {
                 .entryTime(entryTime)
                 .peakSize(peakSize)
                 .displayedQuantity(Math.min(quantity, peakSize))
+                .minimumExecutionQuantity(minimumExecutionQuantity)
                 .status(OrderStatus.SNAPSHOT)
                 .build();
     }
@@ -47,6 +48,7 @@ public class IcebergOrder extends Order {
                 .entryTime(entryTime)
                 .peakSize(peakSize)
                 .displayedQuantity(Math.min(newQuantity, peakSize))
+                .minimumExecutionQuantity(minimumExecutionQuantity)
                 .status(OrderStatus.SNAPSHOT)
                 .build();
     }
