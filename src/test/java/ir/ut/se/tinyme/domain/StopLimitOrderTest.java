@@ -17,6 +17,8 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
+import org.mockito.InOrder;
+import ir.ut.se.tinyme.messaging.TradeDTO;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -430,7 +432,6 @@ public class StopLimitOrderTest {
     }
 
 
-
     @Test
     void check_update_price_of_a_stoplimit_order_which_is_inactive(){
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
@@ -472,4 +473,31 @@ public class StopLimitOrderTest {
         assertThat(security.getOrderBook().getBuyQueue().size()).isEqualTo(5);
     }
 
+    @Test
+    void new_stop_limit_order_where_it_activates_when_added_and_executes_events_order_test() {
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
+                LocalDateTime.now(), Side.SELL, 200, 15500, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 15000));
+        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
+        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
+        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
+        verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
+        verify(mockEventPublisher).publish(orderExecutedCaptor.capture());
+        OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(11);
+        TradeDTO t = new TradeDTO(security.getIsin(),15700,200,1,11);
+
+        InOrder inOrder = inOrder(mockEventPublisher);
+        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(1, 11));
+        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(11));
+        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(1, 11, List.of(t)));
+        inOrder.verifyNoMoreInteractions();
+    }
+
 }
+
+
+
+
+
