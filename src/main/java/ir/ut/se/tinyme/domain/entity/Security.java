@@ -1,5 +1,7 @@
 package ir.ut.se.tinyme.domain.entity;
 
+import ir.ut.se.tinyme.config.Modules;
+import ir.ut.se.tinyme.domain.service.OrderFactory;
 import ir.ut.se.tinyme.messaging.exception.InvalidRequestException;
 import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
@@ -46,75 +48,88 @@ public class Security {
             broker.decreaseCreditBy((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity());
         }
 
-        Order order;
-        int stopPrice = enterOrderRq.getStopPrice();
-        if (stopPrice != 0){
-            if ((enterOrderRq.getSide() == Side.SELL && stopPrice >= lastTradePrice) ||
-                    (enterOrderRq.getSide() == Side.BUY && stopPrice <= lastTradePrice)) {
-                if (enterOrderRq.getSide() == Side.BUY) {
-                    broker.increaseCreditBy((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity());
-                }
-                order = Order.builder()
-                        .orderId(enterOrderRq.getOrderId())
-                        .security(this)
-                        .side(enterOrderRq.getSide())
-                        .quantity(enterOrderRq.getQuantity())
-                        .broker(broker)
-                        .price(enterOrderRq.getPrice())
-                        .shareholder(shareholder)
-                        .entryTime(enterOrderRq.getEntryTime())
-                        .status(OrderStatus.ACTIVE)
-                        .build();
-                return matcher.execute(order);
-            }else {
-                order = StopLimitOrder.builder()
-                        .orderId(enterOrderRq.getOrderId())
-                        .security(this)
-                        .side(enterOrderRq.getSide())
-                        .quantity(enterOrderRq.getQuantity())
-                        .price(enterOrderRq.getPrice())
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(enterOrderRq.getEntryTime())
-                        .status(OrderStatus.INACTIVE)
-                        .stopPrice(enterOrderRq.getStopPrice())
-                        .build();
+        if (Modules.isModuleActive(Modules.ADDING_ORDER_FACTORY)) {
+            Order order = OrderFactory.getInstance().createOrder(enterOrderRq, shareholder, this, broker);
+            if (order instanceof StopLimitOrder) {
                 stopLimitOrderList.enqueue(order);
+                results.add(MatchResult.noMatchingOccurred());
+                return results;
+            } else if (order.getMinimumExecutionQuantity() != 0) {
+                return matcher.execute(order, order.getMinimumExecutionQuantity());
+            } else {
+                return matcher.execute(order);
             }
-        }else{
-            if (enterOrderRq.getPeakSize() == 0) {
-                order = Order.builder()
-                        .orderId(enterOrderRq.getOrderId())
-                        .security(this)
-                        .side(enterOrderRq.getSide())
-                        .quantity(enterOrderRq.getQuantity())
-                        .price(enterOrderRq.getPrice())
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(enterOrderRq.getEntryTime())
-                        .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
-                        .status(OrderStatus.NEW)
-                        .build();
-            }else {
-                order = IcebergOrder.builder()
-                        .peakSize(enterOrderRq.getPeakSize())
-                        .displayedQuantity(Math.min(enterOrderRq.getQuantity(), enterOrderRq.getPeakSize()))
-                        .orderId(enterOrderRq.getOrderId())
-                        .security(this)
-                        .side(enterOrderRq.getSide())
-                        .quantity(enterOrderRq.getQuantity())
-                        .price(enterOrderRq.getPrice())
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(enterOrderRq.getEntryTime())
-                        .status(OrderStatus.NEW)
-                        .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
-                        .build();
+        } else {
+            Order order;
+            int stopPrice = enterOrderRq.getStopPrice();
+            if (stopPrice != 0) {
+                if ((enterOrderRq.getSide() == Side.SELL && stopPrice >= lastTradePrice) ||
+                        (enterOrderRq.getSide() == Side.BUY && stopPrice <= lastTradePrice)) {
+                    if (enterOrderRq.getSide() == Side.BUY) {
+                        broker.increaseCreditBy((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity());
+                    }
+                    order = Order.builder()
+                            .orderId(enterOrderRq.getOrderId())
+                            .security(this)
+                            .side(enterOrderRq.getSide())
+                            .quantity(enterOrderRq.getQuantity())
+                            .broker(broker)
+                            .price(enterOrderRq.getPrice())
+                            .shareholder(shareholder)
+                            .entryTime(enterOrderRq.getEntryTime())
+                            .status(OrderStatus.ACTIVE)
+                            .build();
+                    return matcher.execute(order);
+                } else {
+                    order = StopLimitOrder.builder()
+                            .orderId(enterOrderRq.getOrderId())
+                            .security(this)
+                            .side(enterOrderRq.getSide())
+                            .quantity(enterOrderRq.getQuantity())
+                            .price(enterOrderRq.getPrice())
+                            .broker(broker)
+                            .shareholder(shareholder)
+                            .entryTime(enterOrderRq.getEntryTime())
+                            .status(OrderStatus.INACTIVE)
+                            .stopPrice(enterOrderRq.getStopPrice())
+                            .build();
+                    stopLimitOrderList.enqueue(order);
+                }
+            } else {
+                if (enterOrderRq.getPeakSize() == 0) {
+                    order = Order.builder()
+                            .orderId(enterOrderRq.getOrderId())
+                            .security(this)
+                            .side(enterOrderRq.getSide())
+                            .quantity(enterOrderRq.getQuantity())
+                            .price(enterOrderRq.getPrice())
+                            .broker(broker)
+                            .shareholder(shareholder)
+                            .entryTime(enterOrderRq.getEntryTime())
+                            .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
+                            .status(OrderStatus.NEW)
+                            .build();
+                } else {
+                    order = IcebergOrder.builder()
+                            .peakSize(enterOrderRq.getPeakSize())
+                            .displayedQuantity(Math.min(enterOrderRq.getQuantity(), enterOrderRq.getPeakSize()))
+                            .orderId(enterOrderRq.getOrderId())
+                            .security(this)
+                            .side(enterOrderRq.getSide())
+                            .quantity(enterOrderRq.getQuantity())
+                            .price(enterOrderRq.getPrice())
+                            .broker(broker)
+                            .shareholder(shareholder)
+                            .entryTime(enterOrderRq.getEntryTime())
+                            .status(OrderStatus.NEW)
+                            .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
+                            .build();
+                }
+                return matcher.execute(order, enterOrderRq.getMinimumExecutionQuantity());
             }
-            return matcher.execute(order, enterOrderRq.getMinimumExecutionQuantity());
+            results.add(MatchResult.noMatchingOccurred());
+            return results;
         }
-        results.add(MatchResult.noMatchingOccurred());
-        return results;
     }
 
     public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
