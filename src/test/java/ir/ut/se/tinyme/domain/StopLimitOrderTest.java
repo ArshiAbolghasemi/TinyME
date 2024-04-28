@@ -496,40 +496,39 @@ public class StopLimitOrderTest {
         inOrder.verifyNoMoreInteractions();
     }
 
-//    @Test
-//    void check_event_order_after_some_trades_happen_test(){
-//        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 11,
-//                LocalDateTime.now(), Side.BUY, 65, 200, broker.getBrokerId(),
-//                shareholder.getShareholderId(), 0, 0, 0));
-//        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(5, security.getIsin(), 12,
-//                LocalDateTime.now(), Side.BUY, 5, 15820, broker.getBrokerId(),
-//                shareholder.getShareholderId(), 0, 0, 300));
-//        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(6, security.getIsin(), 13,
-//                LocalDateTime.now(), Side.BUY, 30, 400, broker.getBrokerId(),
-//                shareholder.getShareholderId(), 0, 0, 0));
-//        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-//        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
-//        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
-//        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
-//        verify(mockEventPublisher, times(3)).publish(orderAcceptedCaptor.capture());
-//        verify(mockEventPublisher, times(3)).publish(orderExecutedCaptor.capture());
-//
-//        TradeDTO t1 = new TradeDTO(security.getIsin(),200,65,11,10);
-//        TradeDTO t2 = new TradeDTO(security.getIsin(),400,30,13,19);
-//        TradeDTO t3 = new TradeDTO(security.getIsin(),400,5,12,19);
-//
-//
-//
-//        InOrder inOrder = inOrder(mockEventPublisher);
-//        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(4, 11));
-//        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(4, 11, List.of(t1)));
-//        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(5, 12));
-//        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(6, 13));
-//        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 13, List.of(t2)));
-////        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(12));
-////        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(5, 12, List.of(t3)));
-//        inOrder.verifyNoMoreInteractions();
-//    }
+    @Test
+    void check_event_order_after_some_trades_happen_test(){
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 11,
+                LocalDateTime.now(), Side.BUY, 65, 200, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 0));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(5, security.getIsin(), 12,
+                LocalDateTime.now(), Side.BUY, 5, 15820, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 300));
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(6, security.getIsin(), 13,
+                LocalDateTime.now(), Side.BUY, 30, 400, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 0));
+        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
+        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
+        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
+        verify(mockEventPublisher, times(3)).publish(orderAcceptedCaptor.capture());
+        verify(mockEventPublisher, times(3)).publish(orderExecutedCaptor.capture());
+
+        TradeDTO t1 = new TradeDTO(security.getIsin(),200,65,11,10);
+        TradeDTO t2 = new TradeDTO(security.getIsin(),400,30,13,19);
+        TradeDTO t3 = new TradeDTO(security.getIsin(),400,5,12,19);
+
+
+        InOrder inOrder = inOrder(mockEventPublisher);
+        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(4, 11));
+        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(4, 11, List.of(t1)));
+        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(5, 12));
+        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(6, 13));
+        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(12));
+        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 13, List.of(t3)));
+        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 13, List.of(t2)));
+        inOrder.verifyNoMoreInteractions();
+    }
 
 }
 
