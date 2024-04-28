@@ -13,6 +13,8 @@ public class Modules {
 
     public static final String MODULE_TEST_INACTIVE = "module.test.inactive";
 
+    public static final String ADDING_ORDER_FACTORY = "adding.order.factory";
+
     private static Environment environment;
 
     public Modules(Environment environment) {
