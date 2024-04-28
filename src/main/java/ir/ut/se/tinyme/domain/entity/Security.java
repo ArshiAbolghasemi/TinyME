@@ -161,10 +161,9 @@ public class Security {
 
         if (order instanceof StopLimitOrder) {
             return UpdateStopLimitOrder(updateOrderRq, results, order);
-        }
-        else
+        } else {
             return UpdateNormalOrder(updateOrderRq, matcher, results, order);
-
+        }
     }
 
     private LinkedList<MatchResult> UpdateNormalOrder(EnterOrderRq updateOrderRq, Matcher matcher, LinkedList<MatchResult> results, Order order) {
@@ -223,13 +222,8 @@ public class Security {
             throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
         if (updateOrderRq.getMinimumExecutionQuantity() != order.getMinimumExecutionQuantity())
             throw new InvalidRequestException(Message.COULD_NOT_UPDATE_MEQ);
-        if (updateOrderRq.getStopPrice() != 0) {
-            if (!(order instanceof StopLimitOrder)) {
-                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);
-            }
-//            if (order.getStatus() != OrderStatus.INACTIVE) {
-//                throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);
-//            }
+        if (updateOrderRq.getStopPrice() != 0 && !(order instanceof StopLimitOrder)) {
+            throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);
         }
     }
 
