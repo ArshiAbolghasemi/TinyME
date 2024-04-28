@@ -13,13 +13,15 @@ public class Modules {
 
     public static final String MODULE_TEST_INACTIVE = "module.test.inactive";
 
-    private final Environment environment;
+    public static final String ADDING_STOP_LIMIT_ORDER_ENTITY = "adding.stop.limit.order.entity";
+
+    private static Environment environment;
 
     public Modules(Environment environment) {
-        this.environment = environment;
+        Modules.environment = environment;
     }
 
-    public boolean isModuleActive(String moduleName) {
+    public static boolean isModuleActive(String moduleName) {
         return Boolean.TRUE.equals(environment.getProperty(moduleName, Boolean.class));
     }
 

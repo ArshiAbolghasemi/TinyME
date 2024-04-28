@@ -67,7 +67,7 @@ public class Security {
                         .build();
                 return matcher.execute(order);
             }else {
-                order = Order.builder()
+                order = StopLimitOrder.builder()
                         .orderId(enterOrderRq.getOrderId())
                         .security(this)
                         .side(enterOrderRq.getSide())
@@ -173,6 +173,7 @@ public class Security {
             }
             if (updateOrderRq.getSide() == Side.BUY && !order.getBroker().hasEnoughCredit(
                     (long) updateOrderRq.getPrice() * updateOrderRq.getQuantity())) {
+                order.getBroker().decreaseCreditBy(order.getValue());
                 results.add(MatchResult.notEnoughCredit());
                 return results;
             }
