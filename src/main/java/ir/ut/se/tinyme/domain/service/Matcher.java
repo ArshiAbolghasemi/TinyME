@@ -59,45 +59,25 @@ public class Matcher {
     }
 
     private LinkedList<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
-        // this part has a little bug I think
         LinkedList<MatchResult> results = new LinkedList<>();
 
         for (Order inactiveOrder : security.getStopLimitOrderList().getSellQueue()){
             StopLimitOrder stopLimitOrder = (StopLimitOrder) inactiveOrder;
-            if (stopLimitOrder.canBeActivate(security.getLastTradePrice())) {
-                security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
-                results.addAll(this.execute(Order.builder()
-                        .orderId(inactiveOrder.getOrderId())
-                        .security(security)
-                        .side(inactiveOrder.getSide())
-                        .quantity(inactiveOrder.getQuantity())
-                        .price(inactiveOrder.getPrice())
-                        .broker(inactiveOrder.getBroker())
-                        .shareholder(inactiveOrder.getShareholder())
-                        .entryTime(inactiveOrder.getEntryTime())
-                        .status(OrderStatus.ACTIVE)
-                        .build()
-                ));
-            }
+            if (!stopLimitOrder.canBeActivate(security.getLastTradePrice())) continue;
+
+            security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
+            Order activatedOrder = OrderFactory.getInstance().activateStopLimitOrder(stopLimitOrder);
+            results.addAll(this.execute(activatedOrder));
         }
         for (Order inactiveOrder : security.getStopLimitOrderList().getBuyQueue()){
             StopLimitOrder stopLimitOrder = (StopLimitOrder) inactiveOrder;
-            if (stopLimitOrder.canBeActivate(security.getLastTradePrice())) {
-                security.getStopLimitOrderList().getBuyQueue().remove(inactiveOrder);
-                inactiveOrder.getBroker().increaseCreditBy((long)inactiveOrder.getPrice() * inactiveOrder.getQuantity());
-                results.addAll(this.execute(Order.builder()
-                        .orderId(inactiveOrder.getOrderId())
-                        .security(security)
-                        .side(inactiveOrder.getSide())
-                        .quantity(inactiveOrder.getQuantity())
-                        .price(inactiveOrder.getPrice())
-                        .broker(inactiveOrder.getBroker())
-                        .shareholder(inactiveOrder.getShareholder())
-                        .entryTime(inactiveOrder.getEntryTime())
-                        .status(OrderStatus.ACTIVE)
-                        .build()
-                ));
-            }
+            if (!stopLimitOrder.canBeActivate(security.getLastTradePrice())) continue;
+
+            security.getStopLimitOrderList().getBuyQueue().remove(inactiveOrder);
+            inactiveOrder.getBroker().increaseCreditBy(
+                    (long)inactiveOrder.getPrice() * inactiveOrder.getQuantity());
+            Order activatedOrder = OrderFactory.getInstance().activateStopLimitOrder(stopLimitOrder);
+            results.addAll(this.execute(activatedOrder));
         }
         return results;
     }
