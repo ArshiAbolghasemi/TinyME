@@ -66,19 +66,36 @@ public class Matcher {
         for (Order inactiveOrder : security.getStopLimitOrderList().getSellQueue()){
             if (inactiveOrder.getStopPrice() >= security.getLastTradePrice()) {
                 security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
-                results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
-                        inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
-                        inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
-
+                results.addAll(this.execute(Order.builder()
+                        .orderId(inactiveOrder.getOrderId())
+                        .security(security)
+                        .side(inactiveOrder.getSide())
+                        .quantity(inactiveOrder.getQuantity())
+                        .price(inactiveOrder.getPrice())
+                        .broker(inactiveOrder.getBroker())
+                        .shareholder(inactiveOrder.getShareholder())
+                        .entryTime(inactiveOrder.getEntryTime())
+                        .status(OrderStatus.ACTIVE)
+                        .build()
+                ));
             }
         }
         for (Order inactiveOrder : security.getStopLimitOrderList().getBuyQueue()){
             if (inactiveOrder.getStopPrice() <= security.getLastTradePrice()) {
                 security.getStopLimitOrderList().getBuyQueue().remove(inactiveOrder);
                 inactiveOrder.getBroker().increaseCreditBy((long)inactiveOrder.getPrice() * inactiveOrder.getQuantity());
-                results.addAll(this.execute( new Order(inactiveOrder.getOrderId(), security, inactiveOrder.getSide(),
-                        inactiveOrder.getQuantity(), inactiveOrder.getPrice(), inactiveOrder.getBroker(), inactiveOrder.getShareholder(),
-                        inactiveOrder.getEntryTime(), OrderStatus.ACTIVE)));
+                results.addAll(this.execute(Order.builder()
+                        .orderId(inactiveOrder.getOrderId())
+                        .security(security)
+                        .side(inactiveOrder.getSide())
+                        .quantity(inactiveOrder.getQuantity())
+                        .price(inactiveOrder.getPrice())
+                        .broker(inactiveOrder.getBroker())
+                        .shareholder(inactiveOrder.getShareholder())
+                        .entryTime(inactiveOrder.getEntryTime())
+                        .status(OrderStatus.ACTIVE)
+                        .build()
+                ));
             }
         }
         return results;
