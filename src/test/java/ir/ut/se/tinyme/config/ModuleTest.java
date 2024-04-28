@@ -15,11 +15,11 @@ public class ModuleTest {
 
     @Test
     void test_module_test_active_is_active() {
-        assertThat(modules.isTestModuleActive()).isTrue();
+        assertThat(modules.isModuleActive(Modules.MODULE_TEST_ACTIVE)).isTrue();
     }
 
     @Test
     void test_module_test_not_active_is_not_active() {
-        assertThat(modules.isTestModuleInactive()).isFalse();
+        assertThat(modules.isModuleActive(Modules.MODULE_TEST_INACTIVE)).isFalse();
     }
 }

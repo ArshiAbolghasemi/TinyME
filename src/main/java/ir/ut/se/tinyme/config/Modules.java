@@ -1,19 +1,26 @@
 package ir.ut.se.tinyme.config;
 
-import lombok.Getter;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 
-@Getter
 @Configuration
 @PropertySource("classpath:module-${spring.profiles.active}.properties")
 public class Modules {
 
-    @Value("${module.test.active}")
-    private boolean testModuleActive;
+    public static final String MODULE_TEST_ACTIVE = "module.test.active";
 
-    @Value("${module.test.inactive}")
-    private boolean testModuleInactive;
+    public static final String MODULE_TEST_INACTIVE = "module.test.inactive";
+
+    private final Environment environment;
+
+    public Modules(Environment environment) {
+        this.environment = environment;
+    }
+
+    public boolean isModuleActive(String moduleName) {
+        return Boolean.TRUE.equals(environment.getProperty(moduleName, Boolean.class));
+    }
 
 }
