@@ -152,7 +152,7 @@ public class Security {
             throw new InvalidRequestException(Message.COULD_NOT_UPDATE_MEQ);
         }
         if (updateOrderRq.getStopPrice() != 0) {
-            if (order.getStopPrice() == 0) {
+            if (!(order instanceof StopLimitOrder)) {
                 throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);
             }
 //            if (order.getStatus() != OrderStatus.INACTIVE) {
@@ -167,7 +167,7 @@ public class Security {
             return results;
         }
 
-        if (order.getStopPrice() != 0 && order.getStatus() == OrderStatus.INACTIVE) {
+        if (order instanceof StopLimitOrder && order.getStatus() == OrderStatus.INACTIVE) {
             if (order.getSide() == Side.BUY) {
                 order.getBroker().increaseCreditBy(order.getValue());
             }

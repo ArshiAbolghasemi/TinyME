@@ -1,6 +1,5 @@
 package ir.ut.se.tinyme.domain.entity;
 
-import ir.ut.se.tinyme.lib.dto.CreateStopLimitOrderDTO;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -12,23 +11,23 @@ import lombok.experimental.SuperBuilder;
 @ToString
 @EqualsAndHashCode(callSuper = true)
 public class StopLimitOrder extends Order {
-    protected int stopPriceV2;
+    protected int stopPrice;
 
     public boolean queuesBefore(Order order) {
-        if (status != OrderStatus.ACTIVE) {
+        if (status != OrderStatus.INACTIVE) {
             return super.queuesBefore(order);
         }
 
         assert order instanceof StopLimitOrder;
         StopLimitOrder stopLimitOrder = (StopLimitOrder) order;
 
-        if (stopPriceV2 == stopLimitOrder.getStopPriceV2()) {
+        if (stopPrice == stopLimitOrder.getStopPrice()) {
             return entryTime.isBefore(order.getEntryTime());
         }
 
         return order.getSide() == Side.BUY ?
-                stopPriceV2 > ((StopLimitOrder) order).getStopPriceV2() :
-                stopPriceV2 < ((StopLimitOrder) order).getStopPriceV2();
+                stopPrice < ((StopLimitOrder) order).getStopPrice() :
+                stopPrice > ((StopLimitOrder) order).getStopPrice();
     }
 
     public void queue() {
@@ -38,12 +37,12 @@ public class StopLimitOrder extends Order {
 
     public void updateFromRequest(EnterOrderRq updateOrderRq) {
         super.updateFromRequest(updateOrderRq);
-        stopPriceV2 = updateOrderRq.getStopPrice();
+        stopPrice = updateOrderRq.getStopPrice();
     }
 
     public boolean canBeActivate(int lastTradePrice) {
-        return ((side == Side.SELL && stopPriceV2 >= lastTradePrice) ||
-                side == Side.BUY && stopPriceV2 <= lastTradePrice);
+        return ((side == Side.SELL && stopPrice >= lastTradePrice) ||
+                side == Side.BUY && stopPrice <= lastTradePrice);
     }
 
 }

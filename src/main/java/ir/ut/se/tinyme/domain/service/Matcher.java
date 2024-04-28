@@ -63,7 +63,8 @@ public class Matcher {
         LinkedList<MatchResult> results = new LinkedList<>();
 
         for (Order inactiveOrder : security.getStopLimitOrderList().getSellQueue()){
-            if (inactiveOrder.getStopPrice() >= security.getLastTradePrice()) {
+            StopLimitOrder stopLimitOrder = (StopLimitOrder) inactiveOrder;
+            if (stopLimitOrder.canBeActivate(security.getLastTradePrice())) {
                 security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
                 results.addAll(this.execute(Order.builder()
                         .orderId(inactiveOrder.getOrderId())
@@ -80,7 +81,8 @@ public class Matcher {
             }
         }
         for (Order inactiveOrder : security.getStopLimitOrderList().getBuyQueue()){
-            if (inactiveOrder.getStopPrice() <= security.getLastTradePrice()) {
+            StopLimitOrder stopLimitOrder = (StopLimitOrder) inactiveOrder;
+            if (stopLimitOrder.canBeActivate(security.getLastTradePrice())) {
                 security.getStopLimitOrderList().getBuyQueue().remove(inactiveOrder);
                 inactiveOrder.getBroker().increaseCreditBy((long)inactiveOrder.getPrice() * inactiveOrder.getQuantity());
                 results.addAll(this.execute(Order.builder()
