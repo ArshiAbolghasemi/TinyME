@@ -42,24 +42,133 @@ public class BrokerCreditTest {
         buyerShareholder.incPosition(security, 100_000);
         orderBook = security.getOrderBook();
         List<Order> orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 15700, buyerBroker, buyerShareholder),
-                new Order(2, security, Side.BUY, 43, 15500, buyerBroker, buyerShareholder),
-                new Order(3, security, Side.BUY, 445, 15450, buyerBroker, buyerShareholder),
-                new Order(4, security, Side.BUY, 526, 15450, buyerBroker, buyerShareholder),
-                new Order(5, security, Side.BUY, 1000, 15400, buyerBroker, buyerShareholder),
-                new Order(6, security, Side.SELL, 350, 15800, sellerBroker, sellerShareholder),
-                new Order(7, security, Side.SELL, 285, 15810, sellerBroker, sellerShareholder),
-                new Order(8, security, Side.SELL, 800, 15810, sellerBroker, sellerShareholder),
-                new Order(9, security, Side.SELL, 340, 15820, sellerBroker, sellerShareholder),
-                new Order(10, security, Side.SELL, 65, 15820, sellerBroker, sellerShareholder)
+                Order.builder()
+                        .orderId(1)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(304)
+                        .price(15700)
+                        .broker(buyerBroker)
+                        .shareholder(buyerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(2)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(43)
+                        .price(15500)
+                        .broker(buyerBroker)
+                        .shareholder(buyerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(3)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(445)
+                        .price(15450)
+                        .broker(buyerBroker)
+                        .shareholder(buyerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(4)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(526)
+                        .price(15450)
+                        .broker(buyerBroker)
+                        .shareholder(buyerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(5)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(1000)
+                        .price(15400)
+                        .broker(buyerBroker)
+                        .shareholder(buyerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(6)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(350)
+                        .price(15800)
+                        .broker(sellerBroker)
+                        .shareholder(sellerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(7)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(285)
+                        .price(15810)
+                        .broker(sellerBroker)
+                        .shareholder(sellerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(8)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(800)
+                        .price(15810)
+                        .broker(sellerBroker)
+                        .shareholder(sellerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(9)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(340)
+                        .price(15820)
+                        .broker(sellerBroker)
+                        .shareholder(sellerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(10)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(65)
+                        .price(15820)
+                        .broker(sellerBroker)
+                        .shareholder(sellerShareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build()
         );
         orders.forEach(order -> orderBook.enqueue(order));
     }
 
     @Test
     void new_buy_order_matches_with_entire_sell_queue_with_remain_quantity() {
-        Order newOrder = new Order(11, security, Side.BUY, 2000, 15820, buyerBroker,
-                buyerShareholder);
+        Order newOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(2000)
+                .price(15820)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .entryTime(LocalDateTime.now())
+                .status(OrderStatus.NEW)
+                .build();
         LinkedList<MatchResult> results =  matcher.execute(newOrder);
         assertThat(results).hasSize(1);
         MatchResult result = results.get(0);
@@ -82,8 +191,17 @@ public class BrokerCreditTest {
 
     @Test
     void new_buy_order_matches_partially_with_seller_orders() {
-        Order newOrder = new Order(11, security, Side.BUY, 1000, 15810, buyerBroker,
-                buyerShareholder);
+        Order newOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(1000)
+                .price(15810)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .entryTime(LocalDateTime.now())
+                .status(OrderStatus.NEW)
+                .build();
         LinkedList<MatchResult> results =  matcher.execute(newOrder);
         assertThat(results).hasSize(1);
         MatchResult result = results.get(0);
@@ -105,8 +223,17 @@ public class BrokerCreditTest {
 
     @Test
     void new_buy_order_not_match_any_sell_order() {
-        Order newOrder = new Order(11, security, Side.BUY, 1000, 10_000, buyerBroker,
-                buyerShareholder);
+        Order newOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(1000)
+                .price(10_000)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .entryTime(LocalDateTime.now())
+                .status(OrderStatus.NEW)
+                .build();
         LinkedList<MatchResult> results =  matcher.execute(newOrder);
         assertThat(results).hasSize(1);
         MatchResult result = results.get(0);
@@ -123,8 +250,17 @@ public class BrokerCreditTest {
     @Test
     void new_buy_order_not_enough_credit() {
         buyerBroker.decreaseCreditBy(90_000_000L);
-        Order newOrder = new Order(11, security, Side.BUY, 1000, 15810, buyerBroker,
-                buyerShareholder);
+        Order newOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(2000)
+                .price(15810)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .entryTime(LocalDateTime.now())
+                .status(OrderStatus.NEW)
+                .build();
         LinkedList<MatchResult> results =  matcher.execute(newOrder);
         assertThat(results).hasSize(1);
         MatchResult result = results.get(0);
@@ -146,13 +282,41 @@ public class BrokerCreditTest {
 
     @Test
     void new_buy_order_matches_completely_with_sell_order_ice_berg_in_order_book() {
-        IcebergOrder icebergOrderSell = new IcebergOrder(11, security, Side.SELL, 65, 15820, sellerBroker, sellerShareholder,
-                50);
+        IcebergOrder icebergOrderSell = IcebergOrder.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.SELL)
+                .quantity(65)
+                .price(15820)
+                .broker(sellerBroker)
+                .shareholder(sellerShareholder)
+                .peakSize(50)
+                .displayedQuantity(Math.min(50, 65))
+                .build();
+
+        IcebergOrder icebergOrder = IcebergOrder.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.SELL)
+                .quantity(65)
+                .price(15820)
+                .broker(sellerBroker)
+                .shareholder(sellerShareholder)
+                .peakSize(50)
+                .displayedQuantity(Math.min(65, 50))
+                .build();
 
         orderBook.enqueue(icebergOrderSell);
 
-        Order newBuyOrder = new Order(12, security, Side.BUY, 2000, 15820, buyerBroker,
-                buyerShareholder);
+        Order newBuyOrder = Order.builder()
+                .orderId(12)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(2000)
+                .price(15820)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .build();
 
         LinkedList<MatchResult> results =  matcher.execute(newBuyOrder);
         assertThat(results).hasSize(1);
@@ -170,8 +334,15 @@ public class BrokerCreditTest {
 
     @Test
     void new_order_sell_match_complete_buy_orders() {
-        Order newBuyOrder = new Order(11, security, Side.SELL, 2500, 15000, sellerBroker,
-                sellerShareholder);
+        Order newBuyOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.SELL)
+                .quantity(2500)
+                .price(15000)
+                .broker(sellerBroker)
+                .shareholder(sellerShareholder)
+                .build();
 
         LinkedList<MatchResult> results =  matcher.execute(newBuyOrder);
         assertThat(results).hasSize(1);
@@ -190,8 +361,15 @@ public class BrokerCreditTest {
 
     @Test
     void new_order_sell_match_partially_buy_order() {
-        Order newBuyOrder = new Order(11, security, Side.SELL, 2000, 15000, sellerBroker,
-                sellerShareholder);
+        Order newBuyOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.SELL)
+                .quantity(2000)
+                .price(15000)
+                .broker(sellerBroker)
+                .shareholder(sellerShareholder)
+                .build();
 
         LinkedList<MatchResult> results =  matcher.execute(newBuyOrder);
         assertThat(results).hasSize(1);
@@ -209,7 +387,15 @@ public class BrokerCreditTest {
 
     @Test
     void delete_order_buy() {
-        Order deleteOrder = new Order(5, security, Side.BUY, 1000, 15400, buyerBroker, buyerShareholder);
+        Order deleteOrder = Order.builder()
+                .orderId(5)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(1000)
+                .price(15400)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .build();
         DeleteOrderRq deleteOrderRq = new DeleteOrderRq(1, deleteOrder.getSecurity().getIsin(),
                 deleteOrder.getSide(), deleteOrder.getOrderId());
         assertThatNoException().isThrownBy(() -> deleteOrder.getSecurity().deleteOrder(deleteOrderRq));
@@ -218,8 +404,16 @@ public class BrokerCreditTest {
 
     @Test
     void update_order_buy_quantity_without_lose_priority() {
-        Order toBeUpdateOrder = new Order(1, security, Side.BUY, 304, 15700, buyerBroker,
-                buyerShareholder);
+        Order toBeUpdateOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(304)
+                .price(15700)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .build();
+        orderBook.enqueue(toBeUpdateOrder);
         EnterOrderRq enterOrderRq = EnterOrderRq.createUpdateOrderRq(
                 1,
                 toBeUpdateOrder.getSecurity().getIsin(),
@@ -240,9 +434,17 @@ public class BrokerCreditTest {
 
     @Test
     void update_order_buy_increase_quantity_match_completely_sell_orders() {
-        Order toBeUpdateOrder = new Order(11, security, Side.BUY, 2000, 15820, buyerBroker,
-                buyerShareholder);
+        Order toBeUpdateOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(2000)
+                .price(15820)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .build();
         orderBook.enqueue(toBeUpdateOrder);
+
         EnterOrderRq enterOrderRq = EnterOrderRq.createUpdateOrderRq(1, toBeUpdateOrder.getSecurity().getIsin(),
                 toBeUpdateOrder.getOrderId(), LocalDateTime.now(), toBeUpdateOrder.getSide(), 2100,
                 toBeUpdateOrder.getPrice(), toBeUpdateOrder.getBroker().getBrokerId(),
@@ -257,8 +459,16 @@ public class BrokerCreditTest {
     @Test
     void update_order_buy_increase_quantity_not_enough_credit() {
         buyerBroker.decreaseCreditBy(99_000_000L);
-        Order toBeUpdateOrder = new Order(11, security, Side.BUY, 1000, 15810, buyerBroker,
-                buyerShareholder);
+        Order toBeUpdateOrder = Order.builder()
+                .orderId(11)
+                .security(security)
+                .side(Side.BUY)
+                .quantity(1000)
+                .price(15810)
+                .broker(buyerBroker)
+                .shareholder(buyerShareholder)
+                .build();
+
         orderBook.enqueue(toBeUpdateOrder);
         EnterOrderRq enterOrderRq = EnterOrderRq.createUpdateOrderRq(1, toBeUpdateOrder.getSecurity().getIsin(),
                 toBeUpdateOrder.getOrderId(), LocalDateTime.now(), toBeUpdateOrder.getSide(), 1100,

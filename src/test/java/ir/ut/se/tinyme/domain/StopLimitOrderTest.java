@@ -55,18 +55,126 @@ public class StopLimitOrderTest {
         shareholder.incPosition(security, 100_000);
         shareholderRepository.addShareholder(shareholder);
         orderBook = security.getOrderBook();
-        orders = Arrays.asList(
-                new Order(1, security, Side.BUY, 304, 15700, broker, shareholder),
-                new Order(2, security, Side.BUY, 43, 15500, broker, shareholder),
-                new Order(3, security, Side.BUY, 445, 15450, broker, shareholder),
-                new Order(4, security, Side.BUY, 526, 15450, broker, shareholder),
-                new Order(5, security, Side.BUY, 1000, 15400, broker, shareholder),
-                new Order(6, security, Side.SELL, 350, 15800, broker, shareholder),
-                new Order(7, security, Side.SELL, 285, 15810, broker, shareholder),
-                new Order(8, security, Side.SELL, 800, 15810, broker, shareholder),
-                new Order(9, security, Side.SELL, 340, 15820, broker, shareholder),
-                new Order(10, security, Side.SELL, 65, 200, broker, shareholder),
-                new Order(19, security, Side.SELL, 60, 400, broker, shareholder)
+        orders = orders = Arrays.asList(
+                Order.builder()
+                        .orderId(1)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(304)
+                        .price(15700)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(2)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(43)
+                        .price(15500)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(3)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(445)
+                        .price(15450)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(4)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(526)
+                        .price(15450)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(5)
+                        .security(security)
+                        .side(Side.BUY)
+                        .quantity(1000)
+                        .price(15400)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(6)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(350)
+                        .price(15800)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(7)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(285)
+                        .price(15810)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(8)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(800)
+                        .price(15810)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(9)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(340)
+                        .price(15820)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(10)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(65)
+                        .price(200)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .entryTime(LocalDateTime.now())
+                        .status(OrderStatus.NEW)
+                        .build(),
+                Order.builder()
+                        .orderId(19)
+                        .security(security)
+                        .side(Side.SELL)
+                        .quantity(60)
+                        .price(400)
+                        .broker(broker)
+                        .shareholder(shareholder)
+                        .build()
         );
         orders.forEach(order -> orderBook.enqueue(order));
         mockEventPublisher = mock(EventPublisher.class, withSettings().verboseLogging());
