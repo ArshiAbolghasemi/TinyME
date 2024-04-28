@@ -54,7 +54,7 @@ public class OrderHandler {
                 eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getOrderId()));
             }
             if (!matchResult.trades().isEmpty()) {
-                eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(),
+                eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), matchResult.remainder().getOrderId(),
                         matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
             }
         }

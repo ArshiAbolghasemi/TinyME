@@ -525,7 +525,7 @@ public class StopLimitOrderTest {
         inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(5, 12));
         inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(6, 13));
         inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(12));
-        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 13, List.of(t3)));
+        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 12, List.of(t3)));
         inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 13, List.of(t2)));
         inOrder.verifyNoMoreInteractions();
     }
