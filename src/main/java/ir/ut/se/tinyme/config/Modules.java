@@ -13,7 +13,7 @@ public class Modules {
 
     public static final String MODULE_TEST_INACTIVE = "module.test.inactive";
 
-    public static final String ADDING_STOP_LIMIT_ORDER_ENTITY = "adding.stop.limit.order.entity";
+    public static final String ADDING_ORDER_FACTORY = "adding.order.factory";
 
     private static Environment environment;
 
