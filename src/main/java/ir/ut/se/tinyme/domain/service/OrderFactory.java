@@ -30,8 +30,7 @@ public class OrderFactory {
                     .stopPrice(enterOrderRq.getStopPrice())
                     .status(OrderStatus.INACTIVE)
                     .build();
-            return order.canBeActivate(security.getLastTradePrice()) ?
-                    activateStopLimitOrder(order) : order;
+            return order.canBeActivate(security.getLastTradePrice()) ? activateStopLimitOrder(order) : order;
         } else if (enterOrderRq.getPeakSize() != 0) {
             return IcebergOrder.builder()
                     .peakSize(enterOrderRq.getPeakSize())
