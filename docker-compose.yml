@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  tinyme:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      - artemis
+    env_file:
+      - .env
+    networks:
+      - tinyme-network
+
+  artemis:
+    image: apache/activemq-artemis:latest
+    container_name: artemis
+    environment:
+      ARTEMIS_USERNAME: ${ARTEMIS_USERNAME}
+      ARTEMIS_PASSWORD: ${ARTEMIS_PASSWORD}
+    volumes:
+      - ./artemis:/var/lib/artemis/etc-override
+    ports:
+      - '8161:8161'
+      - '61616:61616'
+    networks:
+      - tinyme-network
+
+networks:
+  tinyme-network:
+    driver: bridge
+
