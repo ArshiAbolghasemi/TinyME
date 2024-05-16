@@ -51,11 +51,6 @@ public class Security {
 
         if (Modules.isModuleActive(Modules.ADDING_ORDER_FACTORY)) {
             Order order = OrderFactory.getInstance().createOrder(enterOrderRq, shareholder, this, broker);
-            if(this.getState() == MatcherState.AUCTION && (order instanceof StopLimitOrder
-                    || order.getMinimumExecutionQuantity() != 0)){
-                results.add(MatchResult.cantInitializeMEQorStopLimitDuringAuctionMode());
-                return results;
-            }
             if (order instanceof StopLimitOrder) {
                 stopLimitOrderList.enqueue(order);
                 results.add(MatchResult.noMatchingOccurred());

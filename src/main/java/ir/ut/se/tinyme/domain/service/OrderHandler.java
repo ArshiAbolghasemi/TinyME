@@ -7,6 +7,7 @@ import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.TradeDTO;
 import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
+import ir.ut.se.tinyme.messaging.request.MatcherState;
 import ir.ut.se.tinyme.messaging.request.OrderEntryType;
 import ir.ut.se.tinyme.repository.BrokerRepository;
 import ir.ut.se.tinyme.repository.SecurityRepository;
@@ -44,10 +45,6 @@ public class OrderHandler {
                 eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
                         enterOrderRq.getOrderId(), List.of(Message.MEQ_MIN_TRADE_NOT_MET)));
                 continue;
-            }
-            if(matchResult.outcome() == MatchingOutcome.CANT_INITIALIZE_MEQ_OR_STOP_LIMIT_DURING_AUCTION_MODE){
-                eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
-                        enterOrderRq.getOrderId(), List.of(Message.CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE)));
             }
             if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
                 eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
@@ -125,11 +122,20 @@ public class OrderHandler {
             errors.add(Message.INVALID_PEAK_SIZE);
         if (!this.isValidMinimumExecutionQuantityRange(enterOrderRq))
             errors.add(Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE);
-
+        if (this.validateMEQAndStopLimitNewOrderCondition(enterOrderRq))
+            errors.add(Message.CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE);
         checkTheStopLimitConditions(enterOrderRq, errors);
-
         if (!errors.isEmpty())
             throw new InvalidRequestException(errors);
+    }
+
+    private boolean validateMEQAndStopLimitNewOrderCondition(EnterOrderRq enterOrderRq){
+        Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
+        if(security == null) {
+          return false;
+        }
+        return security.getState() == MatcherState.AUCTION && (enterOrderRq.getMinimumExecutionQuantity() != 0
+                || enterOrderRq.getStopPrice() != 0);
     }
 
     private void checkTheStopLimitConditions(EnterOrderRq enterOrderRq,List<String> errors){
