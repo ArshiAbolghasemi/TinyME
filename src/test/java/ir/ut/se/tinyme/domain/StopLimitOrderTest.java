@@ -272,7 +272,7 @@ public class StopLimitOrderTest {
         verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
         verify(mockEventPublisher).publish(orderExecutedCaptor.capture());
         OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(11);
+        assertThat(outputEvent.getRqId()).isEqualTo(1);
     }
 
     @Test
@@ -491,7 +491,7 @@ public class StopLimitOrderTest {
 
         InOrder inOrder = inOrder(mockEventPublisher);
         inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(1, 11));
-        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(11));
+        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(1,11));
         inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(1, 11, List.of(t)));
         inOrder.verifyNoMoreInteractions();
     }
@@ -524,8 +524,8 @@ public class StopLimitOrderTest {
         inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(4, 11, List.of(t1)));
         inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(5, 12));
         inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(6, 13));
-        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(12));
-        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 12, List.of(t3)));
+        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(5,12));
+        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(5, 12, List.of(t3)));
         inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 13, List.of(t2)));
         inOrder.verifyNoMoreInteractions();
     }

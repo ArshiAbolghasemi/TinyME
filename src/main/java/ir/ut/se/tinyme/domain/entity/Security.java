@@ -189,7 +189,7 @@ public class Security {
             if (updateOrderRq.getSide() == Side.BUY) {
                 order.getBroker().decreaseCreditBy(order.getValue());
             }
-            results.add(MatchResult.executed(null, List.of()));
+            results.add(MatchResult.executed(order, List.of()));
             return results;
         }
 
@@ -219,7 +219,7 @@ public class Security {
         if (order.getSide() == Side.BUY) {
             order.getBroker().decreaseCreditBy(order.getValue());
         }
-        results.add(MatchResult.executed(null, List.of()));
+        results.add(MatchResult.executed(order, List.of()));
         return results;
     }
 

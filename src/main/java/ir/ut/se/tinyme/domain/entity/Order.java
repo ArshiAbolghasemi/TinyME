@@ -92,6 +92,7 @@ public class Order {
     public void updateFromRequest(EnterOrderRq updateOrderRq) {
         quantity = updateOrderRq.getQuantity();
         price = updateOrderRq.getPrice();
+        rqId = updateOrderRq.getRequestId();
     }
 
     public long getValue() {

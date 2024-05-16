@@ -61,10 +61,10 @@ public class OrderHandler {
                 continue;
             }
             if (matchResult.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
-                eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getOrderId()));
+                eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getRqId(),matchResult.remainder().getOrderId()));
             }
             if (!matchResult.trades().isEmpty()) {
-                eventPublisher.publish(new OrderExecutedEvent(enterOrderRq.getRequestId(), matchResult.remainder().getOrderId(),
+                eventPublisher.publish(new OrderExecutedEvent(matchResult.remainder().getRqId(), matchResult.remainder().getOrderId(),
                         matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
             }
         }
