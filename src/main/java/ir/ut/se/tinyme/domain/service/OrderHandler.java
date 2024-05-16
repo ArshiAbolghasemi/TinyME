@@ -43,7 +43,7 @@ public class OrderHandler {
         for (MatchResult matchResult : results) {
             if (matchResult.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
                 eventPublisher.publish(new OpeningPriceEvent(matchResult.security().getIsin()
-                        ,matchResult.security().getOpeningPrice(), matchResult.security().getAuctionTradableQuantity()));
+                        ,matchResult.security().getAuctionData().getBestOpeningPrice(), matchResult.security().getAuctionData().getBestQuantity()));
             }
             if (matchResult.outcome() == MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET) {
                 eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),

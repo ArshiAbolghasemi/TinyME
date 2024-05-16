@@ -121,7 +121,7 @@ public class Matcher {
             results.add(mainReqResult);
         }else {
             order.getSecurity().getOrderBook().enqueue(order);
-            order.getSecurity().setOpeningPrice(order.getSecurity().getOrderBook().calculateTheBestOpeningPrice());
+            order.getSecurity().setAuctionData( order.getSecurity().getOrderBook().calculateTheBestOpeningPrice(order.getSecurity().getLastTradePrice()));
             results.add(MatchResult.newOpenPriceCalculated(order.getSecurity()));
         }
         return results;

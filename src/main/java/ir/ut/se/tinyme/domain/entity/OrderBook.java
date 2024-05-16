@@ -4,6 +4,7 @@ import lombok.Getter;
 
 import java.util.*;
 
+import static java.lang.Math.abs;
 import static org.apache.commons.lang3.math.NumberUtils.min;
 
 @Getter
@@ -66,7 +67,7 @@ public class OrderBook {
         return openingPrices;
     }
 
-    public int calculateTheBestOpeningPrice(){
+    public AuctionData calculateTheBestOpeningPrice(int lastTradePrice){
         List<Integer> openingPrices = calculateTheOpeningPriceBoundary();
         int bestPrice = 0;
         int maxQuantity = 0;
@@ -84,8 +85,16 @@ public class OrderBook {
                 maxQuantity = min(buyQuantity,sellQuantity);
                 bestPrice = price;
             }
+            if (min(sellQuantity,buyQuantity) == maxQuantity){
+                if(abs(price - lastTradePrice) < abs(bestPrice - lastTradePrice)){
+                    bestPrice = price;
+                }else if(price < bestPrice){
+                    bestPrice = price;
+                }
+
+            }
         }
-        return bestPrice;
+        return new AuctionData(bestPrice, maxQuantity);
     }
 
     public Order matchWithFirst(Order newOrder) {
