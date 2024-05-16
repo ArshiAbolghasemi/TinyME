@@ -88,101 +88,15 @@ public class AuctionMatchingStateTest {
                         .status(OrderStatus.NEW)
                         .build(),
                 Order.builder()
-                        .orderId(3)
-                        .security(security)
-                        .side(Side.BUY)
-                        .quantity(445)
-                        .price(15450)
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(LocalDateTime.now())
-                        .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
-                        .orderId(4)
-                        .security(security)
-                        .side(Side.BUY)
-                        .quantity(526)
-                        .price(15450)
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(LocalDateTime.now())
-                        .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
-                        .orderId(5)
-                        .security(security)
-                        .side(Side.BUY)
-                        .quantity(1000)
-                        .price(15400)
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(LocalDateTime.now())
-                        .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
                         .orderId(6)
                         .security(security)
                         .side(Side.SELL)
                         .quantity(350)
-                        .price(15800)
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(LocalDateTime.now())
-                        .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
-                        .orderId(7)
-                        .security(security)
-                        .side(Side.SELL)
-                        .quantity(285)
                         .price(15810)
                         .broker(broker)
                         .shareholder(shareholder)
                         .entryTime(LocalDateTime.now())
                         .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
-                        .orderId(8)
-                        .security(security)
-                        .side(Side.SELL)
-                        .quantity(800)
-                        .price(15810)
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(LocalDateTime.now())
-                        .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
-                        .orderId(9)
-                        .security(security)
-                        .side(Side.SELL)
-                        .quantity(340)
-                        .price(15820)
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(LocalDateTime.now())
-                        .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
-                        .orderId(10)
-                        .security(security)
-                        .side(Side.SELL)
-                        .quantity(65)
-                        .price(200)
-                        .broker(broker)
-                        .shareholder(shareholder)
-                        .entryTime(LocalDateTime.now())
-                        .status(OrderStatus.NEW)
-                        .build(),
-                Order.builder()
-                        .orderId(19)
-                        .security(security)
-                        .side(Side.SELL)
-                        .quantity(60)
-                        .price(400)
-                        .broker(broker)
-                        .shareholder(shareholder)
                         .build()
         );
         orders.forEach(order -> orderBook.enqueue(order));
@@ -207,6 +121,49 @@ public class AuctionMatchingStateTest {
         assertThat(outputEvent.getMatcherState()).isEqualTo(security.getState());
     }
 
+    @Test
+    void enque_new_order_and_get_best_opening_price_test(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
+        assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(15700);
+        assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(285);
+        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass
+                (OpeningPriceEvent.class);
+        verify(mockEventPublisher).publish(openingPriceEventArgumentCaptor.capture());
+        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOpeningPrice()).isEqualTo(15700);
+        assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
+        assertThat(outputEvent.getTradableQuantity()).isEqualTo(285);
+    }
+
+    @Test
+    void enque_new_order_and_best_opening_price_is_invalid_test(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15800, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
+        assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(0);
+        assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(0);
+        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass
+                (OpeningPriceEvent.class);
+        verify(mockEventPublisher).publish(openingPriceEventArgumentCaptor.capture());
+        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOpeningPrice()).isEqualTo(0);
+        assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
+        assertThat(outputEvent.getTradableQuantity()).isEqualTo(0);
+    }
 }
 
 
