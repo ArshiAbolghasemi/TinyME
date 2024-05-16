@@ -36,7 +36,7 @@ public class MatcherHandler {
         if (security.getState() == MatcherState.AUCTION){
             matcher.auction();
         }
-        security.setMatcherState(matchingStateRq.getState());
+        security.setState(matchingStateRq.getState());
         publisher.publish(new SecurityStateChangedEvent(security.getIsin(), security.getState()));
     }
 

@@ -30,6 +30,7 @@ public class Security {
     @Setter
     @Builder.Default
     private int lastTradePrice = 0;
+    @Setter
     @Builder.Default
     private MatcherState state = MatcherState.CONTINUOUS;
 
@@ -240,7 +241,4 @@ public class Security {
         return order;
     }
 
-    public void setMatcherState(MatcherState state) {
-        this.state = state;
-    }
 }
