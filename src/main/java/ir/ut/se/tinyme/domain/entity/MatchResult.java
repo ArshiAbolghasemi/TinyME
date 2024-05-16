@@ -37,7 +37,6 @@ public final class MatchResult {
         return new MatchResult(MatchingOutcome.NO_MATCHING_OCCURRED, null, new LinkedList<>());
     }
 
-
     private MatchResult(MatchingOutcome outcome, Order remainder, LinkedList<Trade> trades) {
         this.outcome = outcome;
         this.remainder = remainder;

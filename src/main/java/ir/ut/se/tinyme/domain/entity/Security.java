@@ -202,6 +202,7 @@ public class Security {
     }
 
     private static LinkedList<MatchResult> UpdateStopLimitOrder(EnterOrderRq updateOrderRq, LinkedList<MatchResult> results, Order order) {
+
         if (order.getSide() == Side.BUY) {
             order.getBroker().increaseCreditBy(order.getValue());
         }
@@ -222,6 +223,8 @@ public class Security {
     private static void ValidateUpdateOrder(EnterOrderRq updateOrderRq, Order order) throws InvalidRequestException {
         if (order == null)
             throw new InvalidRequestException(Message.ORDER_ID_NOT_FOUND);
+        if((order instanceof StopLimitOrder) && order.getSecurity().getState() == MatcherState.AUCTION)
+            throw new InvalidRequestException(Message.CANT_UPDATE_STOP_LIMIT_ORDER_ON_AUCTION_MODE);
         if ((order instanceof IcebergOrder) && updateOrderRq.getPeakSize() == 0)
             throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
         if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
