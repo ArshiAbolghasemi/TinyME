@@ -40,15 +40,20 @@ public class OrderHandler {
         else
             eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
         for (MatchResult matchResult : results) {
+            if (matchResult.outcome() == MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET) {
+                eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
+                        enterOrderRq.getOrderId(), List.of(Message.MEQ_MIN_TRADE_NOT_MET)));
+                continue;
+            }
             if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
                 eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
                         enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
-                return;
+                continue;
             }
             if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
                 eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
                         enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
-                return;
+                continue;
             }
             if (matchResult.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
                 eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getOrderId()));
