@@ -52,7 +52,7 @@ public class Security {
             broker.decreaseCreditBy((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity());
         }
 
-        if (Modules.isModuleActive(Modules.ADDING_ORDER_FACTORY)) {
+        //if (Modules.isModuleActive(Modules.ADDING_ORDER_FACTORY)) {
             Order order = OrderFactory.getInstance().createOrder(enterOrderRq, shareholder, this, broker);
             if (order instanceof StopLimitOrder) {
                 stopLimitOrderList.enqueue(order);
@@ -63,7 +63,7 @@ public class Security {
             } else {
                 return matcher.execute(order);
             }
-        } else {
+        /*} else {
             Order order;
             int stopPrice = enterOrderRq.getStopPrice();
             if (stopPrice != 0) {
@@ -133,10 +133,10 @@ public class Security {
             }
             results.add(MatchResult.noMatchingOccurred());
             return results;
-        }
+        }*/
     }
 
-    public void deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
+    public MatchResult deleteOrder(DeleteOrderRq deleteOrderRq) throws InvalidRequestException {
         Order order = orderBook.findByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
 
         if (order == null){
@@ -148,6 +148,11 @@ public class Security {
         if (order.getSide() == Side.BUY)
             order.getBroker().increaseCreditBy(order.getValue());
         orderBook.removeByOrderId(deleteOrderRq.getSide(), deleteOrderRq.getOrderId());
+        if (this.state == MatcherState.AUCTION) {
+            this.setAuctionData(orderBook.calculateTheBestOpeningPrice(this.lastTradePrice));
+            return MatchResult.newOpenPriceCalculated(this);
+        }
+        return null;
     }
 
     public LinkedList<MatchResult> updateOrder(EnterOrderRq updateOrderRq, Matcher matcher) throws InvalidRequestException {

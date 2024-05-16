@@ -29,6 +29,7 @@ public class OrderFactory {
                     .entryTime(enterOrderRq.getEntryTime())
                     .stopPrice(enterOrderRq.getStopPrice())
                     .status(OrderStatus.INACTIVE)
+                    .rqId(enterOrderRq.getRequestId())
                     .build();
             return order.canBeActivate(security.getLastTradePrice()) ? activateStopLimitOrder(order) : order;
         } else if (enterOrderRq.getPeakSize() != 0) {
@@ -45,6 +46,7 @@ public class OrderFactory {
                     .entryTime(enterOrderRq.getEntryTime())
                     .status(OrderStatus.NEW)
                     .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
+                    .rqId(enterOrderRq.getRequestId())
                     .build();
         } else {
             return Order.builder()
@@ -58,6 +60,7 @@ public class OrderFactory {
                     .entryTime(enterOrderRq.getEntryTime())
                     .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
                     .status(OrderStatus.NEW)
+                    .rqId(enterOrderRq.getRequestId())
                     .build();
         }
     }
@@ -73,6 +76,7 @@ public class OrderFactory {
                 .shareholder(stopLimitOrder.getShareholder())
                 .entryTime(stopLimitOrder.getEntryTime())
                 .status(OrderStatus.ACTIVE)
+                .rqId(stopLimitOrder.getRqId())
                 .build();
     }
 }

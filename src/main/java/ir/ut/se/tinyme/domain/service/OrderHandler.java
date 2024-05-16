@@ -90,11 +90,20 @@ public class OrderHandler {
         }
     }
 
+    public void deleteOrderPublishEvent(MatchResult matchResult){
+            if (matchResult.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
+                eventPublisher.publish(new OpeningPriceEvent(matchResult.security().getIsin()
+                        ,matchResult.security().getAuctionData().getBestOpeningPrice(), matchResult.security().getAuctionData().getBestQuantity()));
+            }
+    }
+
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
         try {
             validateDeleteOrderRq(deleteOrderRq);
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
-            security.deleteOrder(deleteOrderRq);
+            MatchResult result = security.deleteOrder(deleteOrderRq);
+            if(result != null)
+                deleteOrderPublishEvent(result);
             eventPublisher.publish(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), ex.getReasons()));

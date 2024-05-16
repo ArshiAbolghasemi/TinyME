@@ -24,8 +24,7 @@ public class Order {
     protected OrderStatus status = OrderStatus.NEW;
     @Builder.Default
     protected int minimumExecutionQuantity = 0;
-//    @Builder.Default
-//    protected int stopPrice = 0;
+    protected long rqId;
 
     public Order snapshot() {
         return builder()
