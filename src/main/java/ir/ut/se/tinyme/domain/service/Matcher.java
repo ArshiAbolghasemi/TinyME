@@ -113,16 +113,18 @@ public class Matcher {
     }
 
     public LinkedList<MatchResult> execute(Order order) {
+        LinkedList<MatchResult> results = new LinkedList<>();
         if (order.getSecurity().getState() == MatcherState.CONTINUOUS) {
             MatchResult mainReqResult = match(order);
             this.processMatchResult(mainReqResult, order);
-            LinkedList<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
+            results = checkAndActivateStopLimitOrderBook(order.getSecurity());
             results.add(mainReqResult);
-            return results;
         }else {
             order.getSecurity().getOrderBook().enqueue(order);
+            order.getSecurity().setOpeningPrice(order.getSecurity().getOrderBook().calculateTheBestOpeningPrice());
+            results.add(MatchResult.newOpenPriceCalculated(order.getSecurity()));
         }
-        return null;
+        return results;
     }
 
     public LinkedList<MatchResult> execute(Order order, int minimumExecutionQuantity) {
@@ -139,10 +141,6 @@ public class Matcher {
         results = checkAndActivateStopLimitOrderBook(order.getSecurity());
         results.add(result);
         return results;
-    }
-
-    private int calculateTheAuctionPrice(){
-        return 0;
     }
 
     public LinkedList<MatchResult> auction(){

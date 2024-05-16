@@ -2,9 +2,9 @@ package ir.ut.se.tinyme.domain.entity;
 
 import lombok.Getter;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.ListIterator;
+import java.util.*;
+
+import static org.apache.commons.lang3.math.NumberUtils.min;
 
 @Getter
 public class OrderBook {
@@ -52,6 +52,40 @@ public class OrderBook {
             }
         }
         return false;
+    }
+
+    private List<Integer> calculateTheOpeningPriceBoundary(){
+        List<Integer> openingPrices = new LinkedList<>();
+        for (Order order : sellQueue) {
+            openingPrices.add(order.getPrice());
+        }
+        for (Order order : buyQueue) {
+            openingPrices.add(order.getPrice());
+        }
+        Collections.sort(openingPrices);
+        return openingPrices;
+    }
+
+    public int calculateTheBestOpeningPrice(){
+        List<Integer> openingPrices = calculateTheOpeningPriceBoundary();
+        int bestPrice = 0;
+        int maxQuantity = 0;
+        for (Integer price : openingPrices) {
+            int buyQuantity = 0, sellQuantity = 0;
+            for (Order order : buyQueue) {
+                if (order.getPrice() >= price)
+                    buyQuantity+=order.getQuantity();
+            }
+            for (Order order : sellQueue) {
+                if (order.getPrice() <= price)
+                    sellQuantity+=order.getQuantity();
+            }
+            if (min(buyQuantity,sellQuantity) > maxQuantity){
+                maxQuantity = min(buyQuantity,sellQuantity);
+                bestPrice = price;
+            }
+        }
+        return bestPrice;
     }
 
     public Order matchWithFirst(Order newOrder) {
