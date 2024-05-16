@@ -122,7 +122,7 @@ public class AuctionMatchingStateTest {
     }
 
     @Test
-    void enque_new_order_and_get_best_opening_price_test(){
+    void enqueue_new_order_and_get_best_opening_price_test(){
         MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
@@ -144,7 +144,7 @@ public class AuctionMatchingStateTest {
     }
 
     @Test
-    void enque_new_order_and_best_opening_price_is_invalid_test(){
+    void enqueue_new_order_and_best_opening_price_is_invalid_test(){
         MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
@@ -164,6 +164,57 @@ public class AuctionMatchingStateTest {
         assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
         assertThat(outputEvent.getTradableQuantity()).isEqualTo(0);
     }
+
+    @Test
+    void new_stop_limit_order_in_auction_state_test()
+    {
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0, 15600);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(1);
+        assertThat(security.getStopLimitOrderList().getBuyQueue().size()).isEqualTo(0);
+        assertThat(security.getStopLimitOrderList().getSellQueue().size()).isEqualTo(0);
+        assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(0);
+        assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(0);
+
+        ArgumentCaptor<OrderRejectedEvent> orderRejectedEventArgumentCaptor = ArgumentCaptor.forClass
+                (OrderRejectedEvent.class);
+        verify(mockEventPublisher).publish(orderRejectedEventArgumentCaptor.capture());
+        OrderRejectedEvent outputEvent2 = orderRejectedEventArgumentCaptor.getValue();
+        assertThat(outputEvent2.getOrderId()).isEqualTo(7);
+        assertThat(outputEvent2.getErrors()).containsExactly(Message.CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE);
+        assertThat(outputEvent2.getRequestId()).isEqualTo(1);
+    }
+
+    @Test
+    void new_meq_order_in_auction_state_test()
+    {
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 100);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(1);
+        assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(0);
+        assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(0);
+
+        ArgumentCaptor<OrderRejectedEvent> orderRejectedEventArgumentCaptor = ArgumentCaptor.forClass
+                (OrderRejectedEvent.class);
+        verify(mockEventPublisher).publish(orderRejectedEventArgumentCaptor.capture());
+        OrderRejectedEvent outputEvent2 = orderRejectedEventArgumentCaptor.getValue();
+        assertThat(outputEvent2.getOrderId()).isEqualTo(7);
+        assertThat(outputEvent2.getErrors()).containsExactly(Message.CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE);
+        assertThat(outputEvent2.getRequestId()).isEqualTo(1);
+    }
+
 }
 
 

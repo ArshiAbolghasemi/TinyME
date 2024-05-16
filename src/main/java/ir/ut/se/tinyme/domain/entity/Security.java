@@ -34,7 +34,8 @@ public class Security {
     @Builder.Default
     private MatcherState state = MatcherState.CONTINUOUS;
     @Setter
-    private AuctionData auctionData;
+    @Builder.Default
+    private AuctionData auctionData = new AuctionData(0,0);
 
     public LinkedList<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
         LinkedList<MatchResult> results = new LinkedList<>();
