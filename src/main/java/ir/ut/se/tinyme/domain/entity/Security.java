@@ -241,4 +241,8 @@ public class Security {
         }
         return order;
     }
+
+    public void setMatcherState(MatcherState state) {
+        this.state = state;
+    }
 }

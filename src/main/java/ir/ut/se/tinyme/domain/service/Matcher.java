@@ -120,7 +120,7 @@ public class Matcher {
             results.add(mainReqResult);
             return results;
         }else {
-
+            order.getSecurity().getOrderBook().enqueue(order);
         }
         return null;
     }
@@ -139,6 +139,10 @@ public class Matcher {
         results = checkAndActivateStopLimitOrderBook(order.getSecurity());
         results.add(result);
         return results;
+    }
+
+    public LinkedList<MatchResult> auction(){
+
     }
 
     private boolean isMinimumExecutionQuantityMet(MatchResult result, int minimumExecutionQuantity) {

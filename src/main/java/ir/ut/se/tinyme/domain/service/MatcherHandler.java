@@ -1,5 +1,6 @@
 package ir.ut.se.tinyme.domain.service;
 
+import ir.ut.se.tinyme.domain.entity.Security;
 import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.request.MatcherState;
 import ir.ut.se.tinyme.messaging.request.MatchingStateRq;
@@ -17,17 +18,23 @@ public class MatcherHandler {
     BrokerRepository brokerRepository;
     ShareholderRepository shareholderRepository;
     EventPublisher eventPublisher;
+    Matcher matcher;
 
    public MatcherHandler(SecurityRepository securityRepository, BrokerRepository brokerRepository,
-                         ShareholderRepository shareholderRepository, EventPublisher eventPublisher) {
+                         ShareholderRepository shareholderRepository, EventPublisher eventPublisher, Matcher matcher) {
        this.securityRepository = securityRepository;
        this.brokerRepository = brokerRepository;
        this.shareholderRepository = shareholderRepository;
        this.eventPublisher = eventPublisher;
+       this.matcher = matcher;
    }
 
     public void handleMatchStateRq(MatchingStateRq matchingStateRq){
-
+        Security security = securityRepository.findSecurityByIsin(matchingStateRq.getSecurityIsin());
+        if (security.getState() == MatcherState.AUCTION){
+            matcher.auction();
+        }
+        security.setMatcherState(matchingStateRq.getState());
     }
 
 }
