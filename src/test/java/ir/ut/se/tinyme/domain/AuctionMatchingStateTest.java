@@ -215,6 +215,29 @@ public class AuctionMatchingStateTest {
         assertThat(outputEvent2.getRequestId()).isEqualTo(1);
     }
 
+    @Test
+    void Change_Matching_State_from_auction_to_auction_or_continuous_Test(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        MatchingStateRq matchingStateRq2 = CreateNewMatchingStateRq(security.getIsin(), MatcherState.CONTINUOUS);
+        MatchingStateRq matchingStateRq3 = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq3);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq2);
+        assertThat(security.getState()).isEqualTo(MatcherState.CONTINUOUS);
+
+        ArgumentCaptor<SecurityStateChangedEvent> securityStateChangedEventArgumentCaptor = ArgumentCaptor.forClass
+                (SecurityStateChangedEvent.class);
+        verify(mockEventPublisher,times(3)).publish(securityStateChangedEventArgumentCaptor.capture());
+
+        InOrder inOrder = inOrder(mockEventPublisher);
+        inOrder.verify(mockEventPublisher,times(2)).publish(new SecurityStateChangedEvent(security.getIsin(), MatcherState.AUCTION));
+        inOrder.verify(mockEventPublisher).publish(new SecurityStateChangedEvent(security.getIsin(), MatcherState.CONTINUOUS));
+    }
+
 }
 
 
