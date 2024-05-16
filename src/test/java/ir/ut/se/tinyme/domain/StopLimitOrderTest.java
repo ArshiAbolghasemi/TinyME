@@ -57,7 +57,7 @@ public class StopLimitOrderTest {
         shareholder.incPosition(security, 100_000);
         shareholderRepository.addShareholder(shareholder);
         orderBook = security.getOrderBook();
-        orders = orders = Arrays.asList(
+        orders = Arrays.asList(
                 Order.builder()
                         .orderId(1)
                         .security(security)
@@ -443,6 +443,7 @@ public class StopLimitOrderTest {
         ArgumentCaptor<OrderUpdatedEvent> orderUpdatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderUpdatedEvent.class);
         verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
         OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
+        assertThat(security.getStopLimitOrderList().findByOrderId(Side.BUY,14).getRqId()).isEqualTo(5);
         assertThat(outputEvent.getOrderId()).isEqualTo(14);
         assertThat(broker.getCredit()).isEqualTo(100_000_000L - 5 * 200);
     }
