@@ -21,6 +21,7 @@ public class Message {
     public static final String MEQ_ORDERS_CANT_BE_STOP_PRICE_ORDERS = "MEQ orders can't be stop price orders";
     public static final String COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER = "Could not update stop limit price for non-limit price or non active stoplimit order";
     public static final String MEQ_MIN_TRADE_NOT_MET = "MEQ minimum trade not met";
+    public static final String CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE = "can not initialize MEQ or stop limit orders on Auction mode";
 
 //    public static final String COULD_NOT_UPDATE_STOP_ORDER_LIMIT_ORDER_THAT_IS_NOT_IN_ACTIVE = "Could not update stop order limit that is not inactive";
 }

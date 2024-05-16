@@ -1,6 +1,7 @@
 package ir.ut.se.tinyme.domain.service;
 
 import ir.ut.se.tinyme.domain.entity.*;
+import ir.ut.se.tinyme.messaging.request.MatcherState;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
@@ -112,11 +113,16 @@ public class Matcher {
     }
 
     public LinkedList<MatchResult> execute(Order order) {
-        MatchResult mainReqResult = match(order);
-        this.processMatchResult(mainReqResult, order);
-        LinkedList<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
-        results.add(mainReqResult);
-        return results;
+        if (order.getSecurity().getState() == MatcherState.CONTINUOUS) {
+            MatchResult mainReqResult = match(order);
+            this.processMatchResult(mainReqResult, order);
+            LinkedList<MatchResult> results = checkAndActivateStopLimitOrderBook(order.getSecurity());
+            results.add(mainReqResult);
+            return results;
+        }else {
+
+        }
+        return null;
     }
 
     public LinkedList<MatchResult> execute(Order order, int minimumExecutionQuantity) {

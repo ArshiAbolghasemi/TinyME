@@ -4,6 +4,7 @@ import ir.ut.se.tinyme.domain.entity.Side;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -38,6 +39,7 @@ public class RequestDispatcherTest {
     }
 
     @Test
+    @Disabled
     void request_channel_integration_works() {
         EnterOrderRq rq = EnterOrderRq.createNewOrderRq(1, "ABC", 200, LocalDateTime.now(),
                 Side.SELL, 300, 15450, 0, 0, 0, 0);

@@ -7,6 +7,7 @@ import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.messaging.Message;
+import ir.ut.se.tinyme.messaging.request.MatcherState;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
@@ -29,6 +30,8 @@ public class Security {
     @Setter
     @Builder.Default
     private int lastTradePrice = 0;
+    @Builder.Default
+    private MatcherState state = MatcherState.CONTINUOUS;
 
     public LinkedList<MatchResult> newOrder(EnterOrderRq enterOrderRq, Broker broker, Shareholder shareholder, Matcher matcher) {
         LinkedList<MatchResult> results = new LinkedList<>();
@@ -48,6 +51,11 @@ public class Security {
 
         if (Modules.isModuleActive(Modules.ADDING_ORDER_FACTORY)) {
             Order order = OrderFactory.getInstance().createOrder(enterOrderRq, shareholder, this, broker);
+            if(this.getState() == MatcherState.AUCTION && (order instanceof StopLimitOrder
+                    || order.getMinimumExecutionQuantity() != 0)){
+                results.add(MatchResult.cantInitializeMEQorStopLimitDuringAuctionMode());
+                return results;
+            }
             if (order instanceof StopLimitOrder) {
                 stopLimitOrderList.enqueue(order);
                 results.add(MatchResult.noMatchingOccurred());

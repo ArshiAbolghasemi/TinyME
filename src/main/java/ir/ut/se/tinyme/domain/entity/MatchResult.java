@@ -25,6 +25,10 @@ public final class MatchResult {
         return new MatchResult(MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET, null, new LinkedList<>());
     }
 
+    public static MatchResult cantInitializeMEQorStopLimitDuringAuctionMode() {
+        return new MatchResult(MatchingOutcome.CANT_INITIALIZE_MEQ_OR_STOP_LIMIT_DURING_AUCTION_MODE, null, new LinkedList<>());
+    }
+
     public static MatchResult stopLimitOrderActivated(Order remainder, List<Trade> trades) {
         return new MatchResult(MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED, remainder, new LinkedList<>(trades));
     }
@@ -32,6 +36,7 @@ public final class MatchResult {
     public static MatchResult noMatchingOccurred(){
         return new MatchResult(MatchingOutcome.NO_MATCHING_OCCURRED, null, new LinkedList<>());
     }
+
 
     private MatchResult(MatchingOutcome outcome, Order remainder, LinkedList<Trade> trades) {
         this.outcome = outcome;

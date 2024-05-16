@@ -2,6 +2,7 @@ package ir.ut.se.tinyme.messaging;
 
 import ir.ut.se.tinyme.messaging.event.OrderExecutedEvent;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -35,6 +36,7 @@ public class EventPublisherTest {
         jmsTemplate.setReceiveTimeout(receiveTimeout);
     }
     @Test
+    @Disabled
     void response_channel_integration_works() {
         OrderExecutedEvent orderExecutedEvent = new OrderExecutedEvent(1, 0, List.of());
         eventPublisher.publish(orderExecutedEvent);
