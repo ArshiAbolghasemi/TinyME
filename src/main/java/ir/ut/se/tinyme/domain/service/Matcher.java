@@ -141,8 +141,12 @@ public class Matcher {
         return results;
     }
 
-    public LinkedList<MatchResult> auction(){
+    private int calculateTheAuctionPrice(){
+        return 0;
+    }
 
+    public LinkedList<MatchResult> auction(){
+        return null;
     }
 
     private boolean isMinimumExecutionQuantityMet(MatchResult result, int minimumExecutionQuantity) {
