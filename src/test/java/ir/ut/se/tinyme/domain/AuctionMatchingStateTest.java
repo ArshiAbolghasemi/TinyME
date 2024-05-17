@@ -272,8 +272,6 @@ public class AuctionMatchingStateTest {
         assertThat(orderBook.getSellQueue().size()).isEqualTo(1);
     }
 
-
-
     @Test
     void check_opening_price_if_an_order_gets_updated(){
         MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
@@ -290,12 +288,14 @@ public class AuctionMatchingStateTest {
         assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(15700);
         assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(285);
         ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass(OpeningPriceEvent.class);
-        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
         verify(mockEventPublisher).publish(openingPriceEventArgumentCaptor.capture());
+        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
         assertThat(outputEvent.getOpeningPrice()).isEqualTo(15700);
         assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
         assertThat(outputEvent.getTradableQuantity()).isEqualTo(285);
     }
+
+
 }
 
 
