@@ -368,7 +368,7 @@ public class AuctionMatchingStateTest {
     }
 
     @Test
-    void check_credit_test2(){
+    void check_credit_test(){
         MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
@@ -383,6 +383,7 @@ public class AuctionMatchingStateTest {
         assertThat(broker.getCredit()).isEqualTo(100_000_000 - 15810 * 300);
 
     }
+    
 }
 
 
