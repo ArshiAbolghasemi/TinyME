@@ -37,6 +37,7 @@ public class AuctionMatchingStateTest {
     private Broker broker;
     private Broker broker2;
     private Shareholder shareholder;
+    private Shareholder shareholder2;
     private OrderBook orderBook;
     private List<Order> orders;
     @Autowired
@@ -60,9 +61,13 @@ public class AuctionMatchingStateTest {
         broker = Broker.builder().brokerId(1).credit(100_000_000L).build();
         broker2 =Broker.builder().brokerId(2).credit(900_000_000L).build();
         brokerRepository.addBroker(broker);
+        brokerRepository.addBroker(broker2);
         shareholder = Shareholder.builder().shareholderId(1).build();
         shareholder.incPosition(security, 100_000);
+        shareholder2 = Shareholder.builder().shareholderId(2).build();
+        shareholder2.incPosition(security, 100_000);
         shareholderRepository.addShareholder(shareholder);
+        shareholderRepository.addShareholder(shareholder2);
         orderBook = security.getOrderBook();
         orders = Arrays.asList(
                 Order.builder()
@@ -376,9 +381,30 @@ public class AuctionMatchingStateTest {
                 Side.BUY, 300, 15820, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
         mockOrderHandler.handleEnterOrder(enterOrderRq);
         mockOrderHandler.handleEnterOrder(enterOrderRq2);
+        assertThat(broker2.getCredit()).isEqualTo(900_000_000);
+        assertThat(security.getOrderBook().getSellQueue().getFirst().getBroker().getBrokerId()).isEqualTo(2);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(broker2.getCredit()).isEqualTo(900_000_000 + 15810 * 300);
         assertThat(broker.getCredit()).isEqualTo(100_000_000 - 15810 * 300);
+
+    }
+
+    @Test
+    void check_positions_test(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewOrderRq(2, security.getIsin(),8,LocalDateTime.now(),
+                Side.BUY, 300, 15820, broker.getBrokerId(), shareholder2.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+        mockOrderHandler.handleEnterOrder(enterOrderRq2);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(broker2.getCredit()).isEqualTo(900_000_000 + 15810 * 300);
+        assertThat(broker.getCredit()).isEqualTo(100_000_000 - 15810 * 300);
+        assertThat(shareholder2.getPositions().get(security)).isEqualTo(100_000 + 300);
+        assertThat(shareholder.getPositions().get(security)).isEqualTo(100_000 - 300);
 
     }
 
