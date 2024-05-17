@@ -5,7 +5,6 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.MatcherHandler;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
-import ir.ut.se.tinyme.domain.service.MatcherHandler;
 import ir.ut.se.tinyme.messaging.Message;
 import ir.ut.se.tinyme.messaging.event.*;
 import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
@@ -22,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.mockito.InOrder;
-import ir.ut.se.tinyme.messaging.TradeDTO;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -383,7 +381,29 @@ public class AuctionMatchingStateTest {
         assertThat(broker.getCredit()).isEqualTo(100_000_000 - 15810 * 300);
 
     }
-    
+
+    @Test
+    void check_if_stop_limit_activates_and_does_not_trade_on_first_Auction(){
+        security.setLastTradePrice(15750);
+        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewStopOrderRequest(2, security.getIsin(),8,LocalDateTime.now(),
+                Side.SELL, 15, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0, 15700);
+        mockOrderHandler.handleEnterOrder(enterOrderRq2);
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
+        ArgumentCaptor<OrderActivatedEvent> orderActivatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        verify(mockEventPublisher).publish(orderActivatedEventArgumentCaptor.capture());
+        OrderActivatedEvent orderActivatedEvent = orderActivatedEventArgumentCaptor.getValue();
+        assertThat(orderActivatedEvent.getOrderId()).isEqualTo(8);
+        assertThat(orderActivatedEvent.getRqId()).isEqualTo(2);
+
+    }
 }
 
 
