@@ -79,4 +79,19 @@ public class OrderFactory {
                 .rqId(stopLimitOrder.getRqId())
                 .build();
     }
+
+    public Order clone(Order order) {
+        return Order.builder()
+                .orderId(order.getOrderId())
+                .security(order.getSecurity())
+                .side(order.getSide())
+                .quantity(order.getQuantity())
+                .broker(order.getBroker())
+                .price(order.getPrice())
+                .shareholder(order.getShareholder())
+                .entryTime(order.getEntryTime())
+                .status(OrderStatus.NEW)
+                .rqId(order.getRqId())
+                .build();
+    }
 }

@@ -12,13 +12,20 @@ public class Matcher {
     public MatchResult match(Order newOrder) {
         OrderBook orderBook = newOrder.getSecurity().getOrderBook();
         LinkedList<Trade> trades = new LinkedList<>();
+        Security security = newOrder.getSecurity();
 
         while (orderBook.hasOrderOfType(newOrder.getSide().opposite()) && newOrder.getQuantity() > 0) {
             Order matchingOrder = orderBook.matchWithFirst(newOrder);
             if (matchingOrder == null)
                 break;
 
-            Trade trade = new Trade(newOrder.getSecurity(), matchingOrder.getPrice(), Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
+            int tradePrice;
+            if (security.getState() == MatcherState.CONTINUOUS)
+                tradePrice = matchingOrder.getPrice();
+            else
+                 tradePrice = security.getAuctionData().getBestOpeningPrice();
+
+            Trade trade = new Trade(newOrder.getSecurity(), tradePrice, Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
             if (newOrder.getSide() == Side.BUY) {
                 if (trade.buyerHasEnoughCredit())
                     trade.decreaseBuyersCredit();
@@ -67,8 +74,7 @@ public class Matcher {
             if (!stopLimitOrder.canBeActivate(security.getLastTradePrice())) continue;
 
             security.getStopLimitOrderList().getSellQueue().remove(inactiveOrder);
-            Order activatedOrder = OrderFactory.getInstance().activateStopLimitOrder(stopLimitOrder);
-            results.addAll(this.execute(activatedOrder));
+            activateBasedOnMode(security, results, stopLimitOrder);
         }
         for (Order inactiveOrder : security.getStopLimitOrderList().getBuyQueue()){
             StopLimitOrder stopLimitOrder = (StopLimitOrder) inactiveOrder;
@@ -77,10 +83,20 @@ public class Matcher {
             security.getStopLimitOrderList().getBuyQueue().remove(inactiveOrder);
             inactiveOrder.getBroker().increaseCreditBy(
                     (long)inactiveOrder.getPrice() * inactiveOrder.getQuantity());
-            Order activatedOrder = OrderFactory.getInstance().activateStopLimitOrder(stopLimitOrder);
-            results.addAll(this.execute(activatedOrder));
+            activateBasedOnMode(security, results, stopLimitOrder);
         }
         return results;
+    }
+
+    private void activateBasedOnMode(Security security, LinkedList<MatchResult> results, StopLimitOrder stopLimitOrder) {
+        if (security.getState() == MatcherState.CONTINUOUS){
+            Order activatedOrder = OrderFactory.getInstance().activateStopLimitOrder(stopLimitOrder);
+            results.addAll(this.execute(activatedOrder));
+        }else {
+            Order activatedOrder = OrderFactory.getInstance().clone(stopLimitOrder);
+            results.add(MatchResult.stopLimitOrderActivated(activatedOrder, new LinkedList<>()));
+            results.add(enqueueAndSetPriceOnAuctionMode(activatedOrder));
+        }
     }
 
     private void rollbackTrades(Order newOrder, LinkedList<Trade> trades) {
@@ -112,6 +128,13 @@ public class Matcher {
         }
     }
 
+    private MatchResult enqueueAndSetPriceOnAuctionMode(Order order){
+        order.getSecurity().getOrderBook().enqueue(order);
+        order.getSecurity().setAuctionData( order.getSecurity().getOrderBook().
+                calculateTheBestOpeningPrice(order.getSecurity().getLastTradePrice()));
+        return MatchResult.newOpenPriceCalculated(order.getSecurity());
+    }
+
     public LinkedList<MatchResult> execute(Order order) {
         LinkedList<MatchResult> results = new LinkedList<>();
         if (order.getSecurity().getState() == MatcherState.CONTINUOUS) {
@@ -120,9 +143,7 @@ public class Matcher {
             results = checkAndActivateStopLimitOrderBook(order.getSecurity());
             results.add(mainReqResult);
         }else {
-            order.getSecurity().getOrderBook().enqueue(order);
-            order.getSecurity().setAuctionData( order.getSecurity().getOrderBook().calculateTheBestOpeningPrice(order.getSecurity().getLastTradePrice()));
-            results.add(MatchResult.newOpenPriceCalculated(order.getSecurity()));
+            results.add(enqueueAndSetPriceOnAuctionMode(order));
         }
         return results;
     }
@@ -143,8 +164,16 @@ public class Matcher {
         return results;
     }
 
-    public LinkedList<MatchResult> auction(){
-        return null;
+    public LinkedList<MatchResult> auction(Security security){
+        OrderBook orderBook = security.getOrderBook();
+        LinkedList<MatchResult> matchResults = new LinkedList<>();
+        for(int i = 0; i < (long) orderBook.getBuyQueue().size(); i++){
+            Order order = orderBook.getBuyQueue().getFirst();
+            orderBook.removeFirst(Side.BUY);
+            matchResults.add(this.match(order));
+        }
+        matchResults.addAll(checkAndActivateStopLimitOrderBook(security));
+        return matchResults;
     }
 
     private boolean isMinimumExecutionQuantityMet(MatchResult result, int minimumExecutionQuantity) {

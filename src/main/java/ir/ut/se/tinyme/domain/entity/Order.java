@@ -1,6 +1,7 @@
 package ir.ut.se.tinyme.domain.entity;
 
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
+import ir.ut.se.tinyme.messaging.request.MatcherState;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 
@@ -38,6 +39,7 @@ public class Order {
                 .entryTime(entryTime)
                 .status(OrderStatus.SNAPSHOT)
                 .minimumExecutionQuantity(minimumExecutionQuantity)
+                .rqId(rqId)
                 .build();
     }
 
@@ -53,14 +55,23 @@ public class Order {
                 .entryTime(entryTime)
                 .status(OrderStatus.SNAPSHOT)
                 .minimumExecutionQuantity(minimumExecutionQuantity)
+                .rqId(rqId)
                 .build();
     }
 
     public boolean matches(Order other) {
-        if (side == Side.BUY)
-            return price >= other.price;
-        else
-            return price <= other.price;
+        if (this.getSecurity().getState() == MatcherState.CONTINUOUS){
+            if (side == Side.BUY)
+                return price >= other.price;
+            else
+                return price <= other.price;
+        }else {
+            int openingPrice = this.getSecurity().getAuctionData().getBestOpeningPrice();
+            if (side == Side.BUY)
+                return price >= openingPrice && other.price <= openingPrice;
+            else
+                return other.price >= openingPrice && price <= openingPrice;
+        }
     }
 
     public void decreaseQuantity(int amount) {
