@@ -137,7 +137,7 @@ public class OrderHandler {
             errors.add(Message.INVALID_PEAK_SIZE);
         if (!this.isValidMinimumExecutionQuantityRange(enterOrderRq))
             errors.add(Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE);
-        if (this.validateMEQAndStopLimitNewOrderCondition(enterOrderRq))
+        if (this.validateMEQAndStopLimitNewOrderCondition(enterOrderRq) && (enterOrderRq.getRequestType() ==  OrderEntryType.NEW_ORDER))
             errors.add(Message.CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE);
         checkTheStopLimitConditions(enterOrderRq, errors);
         if (!errors.isEmpty())

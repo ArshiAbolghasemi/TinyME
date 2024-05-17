@@ -238,6 +238,27 @@ public class AuctionMatchingStateTest {
         inOrder.verify(mockEventPublisher).publish(new SecurityStateChangedEvent(security.getIsin(), MatcherState.CONTINUOUS));
     }
 
+    @Test
+    void update_Stop_limit_Order_in_auction_state()
+    {
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(4, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 150, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        mockOrderHandler.handleEnterOrder(EnterOrderRq.createUpdateStopLimitOrderRq(5, security.getIsin(), 14,
+                LocalDateTime.now(), Side.BUY, 5, 200, broker.getBrokerId(),
+                shareholder.getShareholderId(), 0, 0, 11));
+        ArgumentCaptor<OrderRejectedEvent> orderRejectedEventArgumentCaptor = ArgumentCaptor.forClass
+                (OrderRejectedEvent.class);
+        verify(mockEventPublisher).publish(orderRejectedEventArgumentCaptor.capture());
+        OrderRejectedEvent outputEvent = orderRejectedEventArgumentCaptor.getValue();
+        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        assertThat(outputEvent.getErrors()).containsExactly(Message.CANT_UPDATE_STOP_LIMIT_ORDER_ON_AUCTION_MODE);
+        assertThat(outputEvent.getRequestId()).isEqualTo(5);
+    }
+
 }
 
 
