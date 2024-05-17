@@ -5,6 +5,7 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.MatcherHandler;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
+import ir.ut.se.tinyme.domain.service.MatcherHandler;
 import ir.ut.se.tinyme.messaging.Message;
 import ir.ut.se.tinyme.messaging.event.*;
 import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
@@ -21,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.mockito.InOrder;
+import ir.ut.se.tinyme.messaging.TradeDTO;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -35,6 +37,7 @@ import static org.mockito.Mockito.*;
 public class AuctionMatchingStateTest {
     private Security security;
     private Broker broker;
+    private Broker broker2;
     private Shareholder shareholder;
     private OrderBook orderBook;
     private List<Order> orders;
@@ -57,6 +60,7 @@ public class AuctionMatchingStateTest {
         security = Security.builder().isin("ABC").lastTradePrice(10).build();
         securityRepository.addSecurity(security);
         broker = Broker.builder().brokerId(1).credit(100_000_000L).build();
+        broker2 =Broker.builder().brokerId(2).credit(900_000_000L).build();
         brokerRepository.addBroker(broker);
         shareholder = Shareholder.builder().shareholderId(1).build();
         shareholder.incPosition(security, 100_000);
@@ -91,7 +95,7 @@ public class AuctionMatchingStateTest {
                         .side(Side.SELL)
                         .quantity(350)
                         .price(15810)
-                        .broker(broker)
+                        .broker(broker2)
                         .shareholder(shareholder)
                         .entryTime(LocalDateTime.now())
                         .status(OrderStatus.NEW)
@@ -349,9 +353,9 @@ public class AuctionMatchingStateTest {
         MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
-        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(), 7, LocalDateTime.now(),
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
                 Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
-        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewOrderRq(2, security.getIsin(), 8, LocalDateTime.now(),
+        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewOrderRq(2, security.getIsin(),8,LocalDateTime.now(),
                 Side.BUY, 300, 15820, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
         mockOrderHandler.handleEnterOrder(enterOrderRq);
         mockOrderHandler.handleEnterOrder(enterOrderRq2);
@@ -361,6 +365,23 @@ public class AuctionMatchingStateTest {
         InOrder inOrder = inOrder(mockEventPublisher);
         inOrder.verify(mockEventPublisher).publish(new TradeEvent(security.getIsin(), 15810, 285, 8, 7));
         inOrder.verify(mockEventPublisher).publish(new TradeEvent(security.getIsin(), 15810, 15, 8, 6));
+    }
+
+    @Test
+    void check_credit_test2(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker2.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewOrderRq(2, security.getIsin(),8,LocalDateTime.now(),
+                Side.BUY, 300, 15820, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+        mockOrderHandler.handleEnterOrder(enterOrderRq2);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(broker2.getCredit()).isEqualTo(900_000_000 + 15810 * 300);
+        assertThat(broker.getCredit()).isEqualTo(100_000_000 - 15810 * 300);
+
     }
 }
 
