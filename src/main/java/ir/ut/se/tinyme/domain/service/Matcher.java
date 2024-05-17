@@ -94,7 +94,8 @@ public class Matcher {
             results.addAll(this.execute(activatedOrder));
         }else {
             Order activatedOrder = OrderFactory.getInstance().clone(stopLimitOrder);
-            activatedOrder.getBroker().decreaseCreditBy((long)activatedOrder.getPrice()
+            if (activatedOrder.getSide() == Side.BUY)
+                activatedOrder.getBroker().decreaseCreditBy((long)activatedOrder.getPrice()
                     * activatedOrder.getQuantity());
             results.add(MatchResult.stopLimitOrderActivated(activatedOrder, new LinkedList<>()));
             results.add(enqueueAndSetPriceOnAuctionMode(activatedOrder));

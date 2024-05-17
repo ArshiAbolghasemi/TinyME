@@ -46,8 +46,7 @@ public class Security {
             return results ;
         }
 
-        if (enterOrderRq.getSide() == Side.BUY && enterOrderRq.getStopPrice() != 0 || (this.state == MatcherState.AUCTION
-                && enterOrderRq.getSide() == Side.BUY)) {
+        if (enterOrderRq.getSide() == Side.BUY && (enterOrderRq.getStopPrice() != 0 || this.state == MatcherState.AUCTION)) {
             if (!broker.hasEnoughCredit((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity())) {
                 results.add(MatchResult.notEnoughCredit());
                 return results;
