@@ -404,6 +404,50 @@ public class AuctionMatchingStateTest {
         assertThat(orderActivatedEvent.getRqId()).isEqualTo(2);
 
     }
+
+
+    @Test
+    void check_trades_after_changing_state_back_to_continuous()
+    {
+        security.setLastTradePrice(15750);
+        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewStopOrderRequest(2, security.getIsin(),8,LocalDateTime.now(),
+                Side.SELL, 15, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0, 15700);
+        mockOrderHandler.handleEnterOrder(enterOrderRq2);
+
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
+
+        MatchingStateRq matchingStateRq2 = CreateNewMatchingStateRq(security.getIsin(), MatcherState.CONTINUOUS);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq2);
+        assertThat(security.getState()).isEqualTo(MatcherState.CONTINUOUS);
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(1);
+
+        assertThat(orderBook.getBuyQueue().getLast().getOrderId()).isEqualTo(2);
+        ArgumentCaptor<OrderExecutedEvent> orderExecutedEventArgumentCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
+        verify(mockEventPublisher).publish(orderExecutedEventArgumentCaptor.capture());
+        OrderExecutedEvent orderExecutedEvent = orderExecutedEventArgumentCaptor.getValue();
+        assertThat(orderExecutedEvent.getOrderId()).isEqualTo(1);
+        assertThat(orderExecutedEvent.getTrades().get(0).buyOrderId()).isEqualTo(1);
+        assertThat(orderExecutedEvent.getTrades().get(0).sellOrderId()).isEqualTo(8);
+        assertThat(orderExecutedEvent.getTrades().get(0).quantity()).isEqualTo(15);
+        assertThat(orderExecutedEvent.getTrades().get(0).price()).isEqualTo(15700);
+
+        ArgumentCaptor<OrderActivatedEvent> orderActivatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
+        verify(mockEventPublisher).publish(orderActivatedEventArgumentCaptor.capture());
+        OrderActivatedEvent orderActivatedEvent = orderActivatedEventArgumentCaptor.getValue();
+        assertThat(orderActivatedEvent.getOrderId()).isEqualTo(8);
+        assertThat(orderActivatedEvent.getRqId()).isEqualTo(2);
+
+    }
 }
 
 

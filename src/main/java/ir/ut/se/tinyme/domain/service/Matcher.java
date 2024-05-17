@@ -182,8 +182,6 @@ public class Matcher {
             MatchResult result = this.match(order);
             processMatchResult(result, order);
             matchResults.add(result);
-            if(result.remainder().getQuantity() > 0)
-                break;
         }
         matchResults.addAll(checkAndActivateStopLimitOrderBook(security));
         return matchResults;

@@ -80,6 +80,7 @@ public class MatcherHandler {
         }
         security.setState(matchingStateRq.getState());
         if (security.getState() == MatcherState.CONTINUOUS && state == MatcherState.AUCTION){
+            security.FillSelectedOrderList();
             LinkedList<MatchResult> matchResults = matcher.matchOrderBook(security);
             publishEvents(matchResults, security.getState());
         }
