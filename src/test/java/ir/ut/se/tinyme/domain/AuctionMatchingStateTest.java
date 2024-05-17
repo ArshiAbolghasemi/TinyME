@@ -295,7 +295,6 @@ public class AuctionMatchingStateTest {
         assertThat(outputEvent.getTradableQuantity()).isEqualTo(285);
     }
 
-
 }
 
 
