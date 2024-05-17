@@ -5,7 +5,6 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.MatcherHandler;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
-import ir.ut.se.tinyme.domain.service.MatcherHandler;
 import ir.ut.se.tinyme.messaging.Message;
 import ir.ut.se.tinyme.messaging.event.*;
 import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
@@ -22,7 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.annotation.DirtiesContext;
 import org.mockito.InOrder;
-import ir.ut.se.tinyme.messaging.TradeDTO;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -347,29 +345,22 @@ public class AuctionMatchingStateTest {
     }
 
     @Test
-    void check_credit_test(){
+    void check_trades_with_different_opening_price_from_order_price_test() {
         MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
-        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(), 7, LocalDateTime.now(),
                 Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
-        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewOrderRq(2, security.getIsin(),8,LocalDateTime.now(),
+        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewOrderRq(2, security.getIsin(), 8, LocalDateTime.now(),
                 Side.BUY, 300, 15820, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
         mockOrderHandler.handleEnterOrder(enterOrderRq);
         mockOrderHandler.handleEnterOrder(enterOrderRq2);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         ArgumentCaptor<TradeEvent> tradeEventArgumentCaptor = ArgumentCaptor.forClass(TradeEvent.class);
-        verify(mockEventPublisher).publish(tradeEventArgumentCaptor.capture());
-        TradeEvent tradeOutputEvent1 = tradeEventArgumentCaptor.getValue();
-        TradeEvent tradeOutputEvent2 = tradeEventArgumentCaptor.getValue();
-        assertThat(tradeOutputEvent1.getPrice()).isEqualTo(15810);
-        assertThat(tradeOutputEvent1.getQuantity()).isEqualTo(285);
-        assertThat(tradeOutputEvent1.getBuyId()).isEqualTo(8);
-        assertThat(tradeOutputEvent1.getSellId()).isEqualTo(7);
-        assertThat(tradeOutputEvent2.getPrice()).isEqualTo(15810);
-        assertThat(tradeOutputEvent2.getQuantity()).isEqualTo(15);
-        assertThat(tradeOutputEvent2.getBuyId()).isEqualTo(8);
-        assertThat(tradeOutputEvent2.getSellId()).isEqualTo(6);
+        verify(mockEventPublisher, times(2)).publish(tradeEventArgumentCaptor.capture());
+        InOrder inOrder = inOrder(mockEventPublisher);
+        inOrder.verify(mockEventPublisher).publish(new TradeEvent(security.getIsin(), 15810, 285, 8, 7));
+        inOrder.verify(mockEventPublisher).publish(new TradeEvent(security.getIsin(), 15810, 15, 8, 6));
     }
 }
 
