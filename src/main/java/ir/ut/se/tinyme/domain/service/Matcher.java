@@ -164,7 +164,7 @@ public class Matcher {
         return results;
     }
 
-    public LinkedList<MatchResult> auction(Security security){
+    public LinkedList<MatchResult> matchOrderBook(Security security){
         OrderBook orderBook = security.getOrderBook();
         LinkedList<MatchResult> matchResults = new LinkedList<>();
         for(int i = 0; i < (long) orderBook.getBuyQueue().size(); i++){

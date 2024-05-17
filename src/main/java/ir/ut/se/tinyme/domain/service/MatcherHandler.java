@@ -5,6 +5,7 @@ import ir.ut.se.tinyme.domain.entity.MatchingOutcome;
 import ir.ut.se.tinyme.domain.entity.Security;
 import ir.ut.se.tinyme.domain.entity.Trade;
 import ir.ut.se.tinyme.messaging.EventPublisher;
+import ir.ut.se.tinyme.messaging.Message;
 import ir.ut.se.tinyme.messaging.TradeDTO;
 import ir.ut.se.tinyme.messaging.event.*;
 import ir.ut.se.tinyme.messaging.request.MatcherState;
@@ -35,7 +36,7 @@ public class MatcherHandler {
        this.matcher = matcher;
    }
 
-   private void publishEvents(LinkedList<MatchResult> matchResults, MatchingStateRq matchingStateRq){
+   private void publishEvents(LinkedList<MatchResult> matchResults, MatcherState state){
        for (MatchResult matchResult : matchResults) {
            if (matchResult.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
                eventPublisher.publish(new OpeningPriceEvent(matchResult.security().getIsin()
@@ -44,10 +45,24 @@ public class MatcherHandler {
            if (matchResult.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
                eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getRqId(),matchResult.remainder().getOrderId()));
            }
+           if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
+               eventPublisher.publish(new OrderRejectedEvent(matchResult.remainder().getRqId(),
+                       matchResult.remainder().getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+               continue;
+           }
+           if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
+               eventPublisher.publish(new OrderRejectedEvent(matchResult.remainder().getRqId(),
+                       matchResult.remainder().getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
+               continue;
+           }
            if (!matchResult.trades().isEmpty()) {
                for(Trade trade : matchResult.trades()){
-                   eventPublisher.publish(new TradeEvent(trade.getSecurity().getIsin(), trade.getPrice(),
-                           trade.getQuantity(), trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
+                   if(state == MatcherState.AUCTION)
+                       eventPublisher.publish(new TradeEvent(trade.getSecurity().getIsin(), trade.getPrice(),
+                               trade.getQuantity(), trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
+                   else
+                       eventPublisher.publish(new OrderExecutedEvent(matchResult.remainder().getRqId(), matchResult.remainder().getOrderId(),
+                               matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
                }
            }
        }
@@ -55,11 +70,16 @@ public class MatcherHandler {
 
     public void handleMatchStateRq(MatchingStateRq matchingStateRq){
         Security security = securityRepository.findSecurityByIsin(matchingStateRq.getSecurityIsin());
-        if (security.getState() == MatcherState.AUCTION){
-            LinkedList<MatchResult> matchResults = matcher.auction(security);
-            publishEvents(matchResults, matchingStateRq);
+        MatcherState state = security.getState();
+        if ( state == MatcherState.AUCTION){
+            LinkedList<MatchResult> matchResults = matcher.matchOrderBook(security);
+            publishEvents(matchResults, security.getState());
         }
         security.setState(matchingStateRq.getState());
+        if (security.getState() == MatcherState.CONTINUOUS && state == MatcherState.AUCTION){
+            LinkedList<MatchResult> matchResults = matcher.matchOrderBook(security);
+            publishEvents(matchResults, security.getState());
+        }
         eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin(), security.getState()));
     }
 
