@@ -252,20 +252,16 @@ public class Security {
 
     public void FillSelectedOrderList() {
         if(this.state == MatcherState.AUCTION){
-            while(orderBook.getBuyQueue().size() > 0){
-                if(orderBook.getBuyQueue().getFirst().price >= auctionData.getBestOpeningPrice()){
-                    Order order = orderBook.getBuyQueue().getFirst();
-                    order.getBroker().increaseCreditBy((long)order.getPrice() * order.getQuantity());
-                    orderBook.getBuyQueue().removeFirst();
-                    selectedOrdersList.enqueue(order);
-                }
-                else{
-                    break;
-                }
+            while(!orderBook.getBuyQueue().isEmpty() &&
+                    orderBook.getBuyQueue().getFirst().price >= auctionData.getBestOpeningPrice())
+            {
+                 Order order = orderBook.getBuyQueue().getFirst();
+                 order.getBroker().increaseCreditBy((long)order.getPrice() * order.getQuantity());
+                 orderBook.getBuyQueue().removeFirst();
+                 selectedOrdersList.enqueue(order);
             }
-        }
-        else {
-            while (orderBook.getBuyQueue().size() > 0) {
+        } else {
+            while (!orderBook.getBuyQueue().isEmpty()) {
                 Order order = orderBook.getBuyQueue().getFirst();
                 order.getBroker().increaseCreditBy((long)order.getPrice() * order.getQuantity());
                 orderBook.getBuyQueue().removeFirst();
