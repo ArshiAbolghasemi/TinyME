@@ -1,6 +1,5 @@
 package ir.ut.se.tinyme.domain.entity;
 
-import ir.ut.se.tinyme.config.Modules;
 import ir.ut.se.tinyme.domain.service.OrderFactory;
 import ir.ut.se.tinyme.messaging.exception.InvalidRequestException;
 import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
@@ -27,6 +26,8 @@ public class Security {
     private OrderBook orderBook = new OrderBook();
     @Builder.Default
     private OrderBook stopLimitOrderList = new OrderBook();
+    @Builder.Default
+    private OrderBook selectedOrdersList = new OrderBook();
     @Setter
     @Builder.Default
     private int lastTradePrice = 0;
@@ -249,4 +250,40 @@ public class Security {
         return order;
     }
 
+    public void FillSelectedOrderList() {
+        if(this.state == MatcherState.AUCTION){
+            while(orderBook.getBuyQueue().size() > 0){
+                if(orderBook.getBuyQueue().getFirst().price >= auctionData.getBestOpeningPrice()){
+                    Order order = orderBook.getBuyQueue().getFirst();
+                    orderBook.getBuyQueue().removeFirst();
+                    selectedOrdersList.enqueue(order);
+                }
+                else{
+                    break;
+                }
+            }
+            while(orderBook.getSellQueue().size() > 0){
+                if(orderBook.getSellQueue().getFirst().price <= auctionData.getBestOpeningPrice()){
+                    Order order = orderBook.getSellQueue().getFirst();
+                    orderBook.getSellQueue().removeFirst();
+                    selectedOrdersList.enqueue(order);
+                }
+                else{
+                    break;
+                }
+            }
+        }
+        else {
+            while (orderBook.getBuyQueue().size() > 0) {
+                Order order = orderBook.getBuyQueue().getFirst();
+                orderBook.getBuyQueue().removeFirst();
+                selectedOrdersList.enqueue(order);
+            }
+            while (orderBook.getSellQueue().size() > 0) {
+                Order order = orderBook.getSellQueue().getFirst();
+                orderBook.getSellQueue().removeFirst();
+                selectedOrdersList.enqueue(order);
+            }
+        }
+    }
 }
