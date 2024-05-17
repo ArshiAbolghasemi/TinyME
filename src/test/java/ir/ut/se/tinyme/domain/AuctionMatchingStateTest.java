@@ -295,6 +295,33 @@ public class AuctionMatchingStateTest {
         assertThat(outputEvent.getTradableQuantity()).isEqualTo(285);
     }
 
+    @Test
+    void check_opening_price_if_an_order_gets_deleted(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+        mockOrderHandler.handleDeleteOrder( new DeleteOrderRq( 2, security.getIsin(), Side.BUY, 1));
+        ArgumentCaptor<OrderDeletedEvent> orderDeletedEventArgumentCaptor = ArgumentCaptor.forClass(OrderDeletedEvent.class);
+        verify(mockEventPublisher).publish(orderDeletedEventArgumentCaptor.capture());
+        OrderDeletedEvent outputEvent = orderDeletedEventArgumentCaptor.getValue();
+
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(1);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
+        assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(0);
+        assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(0);
+        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass(OpeningPriceEvent.class);
+        verify(mockEventPublisher,times(2)).publish(openingPriceEventArgumentCaptor.capture());
+
+        InOrder inOrder = inOrder(mockEventPublisher);
+        inOrder.verify(mockEventPublisher).publish(new OpeningPriceEvent(security.getIsin(),15700,285));
+        inOrder.verify(mockEventPublisher).publish(new OpeningPriceEvent(security.getIsin(),0,0));
+        inOrder.verify(mockEventPublisher).publish(new OrderDeletedEvent(2,1));
+
+    }
+
 
 }
 
