@@ -127,6 +127,8 @@ public class OrderHandler {
             if (enterOrderRq.getPrice() % security.getTickSize() != 0)
                 errors.add(Message.PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
         }
+        if(enterOrderRq.getPeakSize() != 0 && enterOrderRq.getMinimumExecutionQuantity() != 0)
+            errors.add(Message.MEQ_ORDERS_CANT_BE_PEAK_ORDERS);
         if (brokerRepository.findBrokerById(enterOrderRq.getBrokerId()) == null)
             errors.add(Message.UNKNOWN_BROKER_ID);
         if (shareholderRepository.findShareholderById(enterOrderRq.getShareholderId()) == null)
