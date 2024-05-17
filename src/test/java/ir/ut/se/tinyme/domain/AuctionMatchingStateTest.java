@@ -259,6 +259,21 @@ public class AuctionMatchingStateTest {
         assertThat(outputEvent.getRequestId()).isEqualTo(5);
     }
 
+    @Test
+    void enqueue_new_buy_order_and_check_brokers_credit_test(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.BUY, 100, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+        assertThat(broker.getCredit()).isEqualTo(100_000_000L - 100 * 15700);
+        assertThat(orderBook.getBuyQueue().size()).isEqualTo(3);
+        assertThat(orderBook.getSellQueue().size()).isEqualTo(1);
+    }
+
+
+
 }
 
 
