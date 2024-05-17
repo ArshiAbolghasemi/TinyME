@@ -345,6 +345,32 @@ public class AuctionMatchingStateTest {
         assertThat(tradeOutputEvent.getBuyId()).isEqualTo(1);
         assertThat(tradeOutputEvent.getSellId()).isEqualTo(7);
     }
+
+    @Test
+    void check_credit_test(){
+        MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+                Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        EnterOrderRq enterOrderRq2 = EnterOrderRq.createNewOrderRq(2, security.getIsin(),8,LocalDateTime.now(),
+                Side.BUY, 300, 15820, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
+        mockOrderHandler.handleEnterOrder(enterOrderRq);
+        mockOrderHandler.handleEnterOrder(enterOrderRq2);
+        mockMatcherHandler.handleMatchStateRq(matchingStateRq);
+        ArgumentCaptor<TradeEvent> tradeEventArgumentCaptor = ArgumentCaptor.forClass(TradeEvent.class);
+        verify(mockEventPublisher).publish(tradeEventArgumentCaptor.capture());
+        TradeEvent tradeOutputEvent1 = tradeEventArgumentCaptor.getValue();
+        TradeEvent tradeOutputEvent2 = tradeEventArgumentCaptor.getValue();
+        assertThat(tradeOutputEvent1.getPrice()).isEqualTo(15810);
+        assertThat(tradeOutputEvent1.getQuantity()).isEqualTo(285);
+        assertThat(tradeOutputEvent1.getBuyId()).isEqualTo(8);
+        assertThat(tradeOutputEvent1.getSellId()).isEqualTo(7);
+        assertThat(tradeOutputEvent2.getPrice()).isEqualTo(15810);
+        assertThat(tradeOutputEvent2.getQuantity()).isEqualTo(15);
+        assertThat(tradeOutputEvent2.getBuyId()).isEqualTo(8);
+        assertThat(tradeOutputEvent2.getSellId()).isEqualTo(6);
+    }
 }
 
 
