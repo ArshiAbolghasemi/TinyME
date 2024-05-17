@@ -167,11 +167,11 @@ public class Matcher {
     }
 
     public LinkedList<MatchResult> matchOrderBook(Security security){
-        OrderBook orderBook = security.getOrderBook();
+        OrderBook selectedorderBook = security.getSelectedOrdersList();
         LinkedList<MatchResult> matchResults = new LinkedList<>();
-        while (orderBook.getBuyQueue().size() > 0){
-            Order order = orderBook.getBuyQueue().getFirst();
-            orderBook.removeFirst(Side.BUY);
+        while (selectedorderBook.getBuyQueue().size() > 0){
+            Order order = selectedorderBook.getBuyQueue().getFirst();
+            selectedorderBook.removeFirst(Side.BUY);
             MatchResult result = this.match(order);
             processMatchResult(result, order);
             matchResults.add(result);

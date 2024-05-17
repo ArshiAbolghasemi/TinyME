@@ -74,6 +74,7 @@ public class MatcherHandler {
         Security security = securityRepository.findSecurityByIsin(matchingStateRq.getSecurityIsin());
         MatcherState state = security.getState();
         if ( state == MatcherState.AUCTION){
+            security.FillSelectedOrderList();
             LinkedList<MatchResult> matchResults = matcher.matchOrderBook(security);
             publishEvents(matchResults, security.getState());
         }

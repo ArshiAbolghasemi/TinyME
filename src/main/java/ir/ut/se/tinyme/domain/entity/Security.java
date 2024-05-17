@@ -46,7 +46,7 @@ public class Security {
             return results ;
         }
 
-        if (enterOrderRq.getSide() == Side.BUY && enterOrderRq.getStopPrice() != 0) {
+        if (enterOrderRq.getSide() == Side.BUY && enterOrderRq.getStopPrice() != 0 || (this.state == MatcherState.AUCTION)) {
             if (!broker.hasEnoughCredit((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity())) {
                 results.add(MatchResult.notEnoughCredit());
                 return results;
@@ -255,17 +255,8 @@ public class Security {
             while(orderBook.getBuyQueue().size() > 0){
                 if(orderBook.getBuyQueue().getFirst().price >= auctionData.getBestOpeningPrice()){
                     Order order = orderBook.getBuyQueue().getFirst();
+                    order.getBroker().increaseCreditBy((long)order.getPrice() * order.getQuantity());
                     orderBook.getBuyQueue().removeFirst();
-                    selectedOrdersList.enqueue(order);
-                }
-                else{
-                    break;
-                }
-            }
-            while(orderBook.getSellQueue().size() > 0){
-                if(orderBook.getSellQueue().getFirst().price <= auctionData.getBestOpeningPrice()){
-                    Order order = orderBook.getSellQueue().getFirst();
-                    orderBook.getSellQueue().removeFirst();
                     selectedOrdersList.enqueue(order);
                 }
                 else{
@@ -276,12 +267,8 @@ public class Security {
         else {
             while (orderBook.getBuyQueue().size() > 0) {
                 Order order = orderBook.getBuyQueue().getFirst();
+                order.getBroker().increaseCreditBy((long)order.getPrice() * order.getQuantity());
                 orderBook.getBuyQueue().removeFirst();
-                selectedOrdersList.enqueue(order);
-            }
-            while (orderBook.getSellQueue().size() > 0) {
-                Order order = orderBook.getSellQueue().getFirst();
-                orderBook.getSellQueue().removeFirst();
                 selectedOrdersList.enqueue(order);
             }
         }
