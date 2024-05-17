@@ -94,6 +94,8 @@ public class Matcher {
             results.addAll(this.execute(activatedOrder));
         }else {
             Order activatedOrder = OrderFactory.getInstance().clone(stopLimitOrder);
+            activatedOrder.getBroker().decreaseCreditBy((long)activatedOrder.getPrice()
+                    * activatedOrder.getQuantity());
             results.add(MatchResult.stopLimitOrderActivated(activatedOrder, new LinkedList<>()));
             results.add(enqueueAndSetPriceOnAuctionMode(activatedOrder));
         }
@@ -167,10 +169,14 @@ public class Matcher {
     public LinkedList<MatchResult> matchOrderBook(Security security){
         OrderBook orderBook = security.getOrderBook();
         LinkedList<MatchResult> matchResults = new LinkedList<>();
-        for(int i = 0; i < (long) orderBook.getBuyQueue().size(); i++){
+        while (orderBook.getBuyQueue().size() > 0){
             Order order = orderBook.getBuyQueue().getFirst();
             orderBook.removeFirst(Side.BUY);
-            matchResults.add(this.match(order));
+            MatchResult result = this.match(order);
+            processMatchResult(result, order);
+            matchResults.add(result);
+            if(result.remainder().getQuantity() > 0)
+                break;
         }
         matchResults.addAll(checkAndActivateStopLimitOrderBook(security));
         return matchResults;

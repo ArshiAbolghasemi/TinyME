@@ -56,13 +56,15 @@ public class MatcherHandler {
                continue;
            }
            if (!matchResult.trades().isEmpty()) {
-               for(Trade trade : matchResult.trades()){
-                   if(state == MatcherState.AUCTION)
+               if(state == MatcherState.AUCTION){
+                   for(Trade trade : matchResult.trades()) {
                        eventPublisher.publish(new TradeEvent(trade.getSecurity().getIsin(), trade.getPrice(),
                                trade.getQuantity(), trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
-                   else
-                       eventPublisher.publish(new OrderExecutedEvent(matchResult.remainder().getRqId(), matchResult.remainder().getOrderId(),
-                               matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+                   }
+               }
+               else if (state == MatcherState.CONTINUOUS ){
+                   eventPublisher.publish(new OrderExecutedEvent(matchResult.remainder().getRqId(), matchResult.remainder().getOrderId(),
+                           matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
                }
            }
        }
