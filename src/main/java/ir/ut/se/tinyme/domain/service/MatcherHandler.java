@@ -51,17 +51,13 @@ public class MatcherHandler {
         List<MatchResult> matchResults = new ArrayList<MatchResult>();
 
         if (security.getState() == MatcherState.AUCTION){
-            security.FillSelectedOrderList();
-            LinkedList<MatchResult> results = matcher.matchOrderBook(security);
-            matchResults.addAll(results);
+            matchResults.addAll(this.match(security));
         }
 
         MatcherState prevState = security.getState();
         security.setState(matchingStateRq.getState());
         if (this.shouldBeTradedAfterChangingState(prevState, security)){
-            security.FillSelectedOrderList();
-            LinkedList<MatchResult> results = matcher.matchOrderBook(security);
-            matchResults.addAll(results);
+            matchResults.addAll(this.match(security));
         }
 
         publishEvents(matchResults);
@@ -70,7 +66,11 @@ public class MatcherHandler {
               security.getState()));
     }
 
-
+    
+    private LinkedList<MatchResult> match(Security security) {
+      security.FillSelectedOrderList();
+      return matcher.matchOrderBook(security);
+    }
 
     private boolean shouldBeTradedAfterChangingState(
         MatcherState prevState, Security security) {
