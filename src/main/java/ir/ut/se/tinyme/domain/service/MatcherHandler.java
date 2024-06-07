@@ -70,7 +70,9 @@ public class MatcherHandler {
               security.getState()));
     }
 
-    public boolean shouldBeTradedAfterChangingState(
+
+
+    private boolean shouldBeTradedAfterChangingState(
         MatcherState prevState, Security security) {
       return (security.getState() == MatcherState.CONTINUOUS && 
           prevState == MatcherState.AUCTION);
