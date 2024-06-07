@@ -36,7 +36,7 @@ public class OrderHandler {
         this.matcher = matcher;
     }
 
-    public void publishEvent(EnterOrderRq enterOrderRq, LinkedList<MatchResult> results) {
+    public void enterOrderPublishEvent(EnterOrderRq enterOrderRq, LinkedList<MatchResult> results) {
         List<Event> events = new ArrayList<Event>();
 
         if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
@@ -67,7 +67,7 @@ public class OrderHandler {
             else
                 results = security.updateOrder(enterOrderRq, matcher);
 
-            publishEvent(enterOrderRq, results);
+            enterOrderPublishEvent(enterOrderRq, results);
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId(), ex.getReasons()));
         }
