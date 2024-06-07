@@ -1,8 +1,15 @@
 package ir.ut.se.tinyme.domain.entity;
 
+import ir.ut.se.tinyme.messaging.event.*;
+import ir.ut.se.tinyme.messaging.Message;
+import ir.ut.se.tinyme.messaging.request.MatcherState;
+import ir.ut.se.tinyme.messaging.TradeDTO;
+
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ArrayList;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public final class MatchResult {
     private final MatchingOutcome outcome;
@@ -81,5 +88,40 @@ public final class MatchResult {
                 "trades=" + trades + ']';
     }
 
+    public List<Event> events() {
+      List<Event> events = new ArrayList<Event>();
+
+      if (!this.trades().isEmpty()) {
+        if(this.security.getState() == MatcherState.AUCTION){
+          for(Trade trade : this.trades()) {
+            events.add(new TradeEvent(trade.getSecurity().getIsin(),
+                  trade.getPrice(), trade.getQuantity(),
+                  trade.getBuy().getOrderId(), trade.getSell().getOrderId()));
+          }
+        } else if (this.security.getState() == MatcherState.CONTINUOUS ){ 
+          events.add(new OrderExecutedEvent(this.remainder().getRqId(), 
+                this.remainder().getOrderId(),
+                this.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
+        }
+      }
+
+      if (this.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
+          events.add(new OrderRejectedEvent(this.remainder().getRqId(),
+                this.remainder().getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+          
+      } else if (this.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
+          events.add(new OrderRejectedEvent(this.remainder().getRqId(),
+                this.remainder().getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+      } else if (this.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
+          events.add(new OpeningPriceEvent(this.security().getIsin(),
+                this.security().getAuctionData().getBestOpeningPrice(),
+                this.security().getAuctionData().getBestQuantity()));
+      } else if (this.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
+          events.add(new OrderActivatedEvent(this.remainder().getRqId(),
+                this.remainder().getOrderId()));
+      } 
+
+      return events;
+    }
 
 }
