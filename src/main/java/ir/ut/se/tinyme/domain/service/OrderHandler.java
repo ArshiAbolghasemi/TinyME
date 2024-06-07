@@ -16,6 +16,7 @@ import ir.ut.se.tinyme.domain.entity.*;
 import org.springframework.stereotype.Service;
 
 import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -40,34 +41,13 @@ public class OrderHandler {
             eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
         else
             eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
+
+        List<Event> events = new ArrayList<Event>();
         for (MatchResult matchResult : results) {
-            if (matchResult.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
-                eventPublisher.publish(new OpeningPriceEvent(matchResult.security().getIsin()
-                        ,matchResult.security().getAuctionData().getBestOpeningPrice(), matchResult.security().getAuctionData().getBestQuantity()));
-            }
-            if (matchResult.outcome() == MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET) {
-                eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
-                        enterOrderRq.getOrderId(), List.of(Message.MEQ_MIN_TRADE_NOT_MET)));
-                continue;
-            }
-            if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
-                eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
-                        enterOrderRq.getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
-                continue;
-            }
-            if (matchResult.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
-                eventPublisher.publish(new OrderRejectedEvent(enterOrderRq.getRequestId(),
-                        enterOrderRq.getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
-                continue;
-            }
-            if (matchResult.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
-                eventPublisher.publish(new OrderActivatedEvent(matchResult.remainder().getRqId(),matchResult.remainder().getOrderId()));
-            }
-            if (!matchResult.trades().isEmpty()) {
-                eventPublisher.publish(new OrderExecutedEvent(matchResult.remainder().getRqId(), matchResult.remainder().getOrderId(),
-                        matchResult.trades().stream().map(TradeDTO::new).collect(Collectors.toList())));
-            }
+          events.addAll(matchResult.events());
         }
+
+        eventPublisher.publishMany(events);
     }
 
     public void handleEnterOrder(EnterOrderRq enterOrderRq) {
