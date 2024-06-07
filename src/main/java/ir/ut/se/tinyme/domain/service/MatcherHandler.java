@@ -37,32 +37,37 @@ public class MatcherHandler {
        this.matcher = matcher;
    }
 
-   private void publishEvents(LinkedList<MatchResult> matchResults) {
+   private void publishEvents(List<MatchResult> matchResults) {
       List<Event> events = new ArrayList<Event>();
       for (MatchResult matchResult : matchResults) {
         events.addAll(matchResult.events());
       }
 
-      for (Event event : events) {
-        eventPublisher.publish(event);
-      }
+      eventPublisher.publishMany(events);
    }
 
     public void handleMatchStateRq(MatchingStateRq matchingStateRq){
         Security security = securityRepository.findSecurityByIsin(matchingStateRq.getSecurityIsin());
         MatcherState state = security.getState();
-        if ( state == MatcherState.AUCTION){
+        List<MatchResult> matchResults = new ArrayList<MatchResult>();
+
+        if (state == MatcherState.AUCTION){
             security.FillSelectedOrderList();
-            LinkedList<MatchResult> matchResults = matcher.matchOrderBook(security);
-            publishEvents(matchResults);
+            LinkedList<MatchResult> results = matcher.matchOrderBook(security);
+            matchResults.addAll(results);
         }
         security.setState(matchingStateRq.getState());
-        if (security.getState() == MatcherState.CONTINUOUS && state == MatcherState.AUCTION){
+        if (security.getState() == MatcherState.CONTINUOUS && 
+            state == MatcherState.AUCTION){
             security.FillSelectedOrderList();
-            LinkedList<MatchResult> matchResults = matcher.matchOrderBook(security);
-            publishEvents(matchResults);
+            LinkedList<MatchResult> results = matcher.matchOrderBook(security);
+            matchResults.addAll(results);
         }
-        eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin(), security.getState()));
+
+        publishEvents(matchResults);
+
+        eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin(), 
+              security.getState()));
     }
 
 }
