@@ -48,17 +48,17 @@ public class MatcherHandler {
 
     public void handleMatchStateRq(MatchingStateRq matchingStateRq){
         Security security = securityRepository.findSecurityByIsin(matchingStateRq.getSecurityIsin());
-        MatcherState state = security.getState();
         List<MatchResult> matchResults = new ArrayList<MatchResult>();
 
-        if (state == MatcherState.AUCTION){
+        if (security.getState() == MatcherState.AUCTION){
             security.FillSelectedOrderList();
             LinkedList<MatchResult> results = matcher.matchOrderBook(security);
             matchResults.addAll(results);
         }
+
+        MatcherState prevState = security.getState();
         security.setState(matchingStateRq.getState());
-        if (security.getState() == MatcherState.CONTINUOUS && 
-            state == MatcherState.AUCTION){
+        if (this.shouldBeTradedAfterChangingState(prevState, security)){
             security.FillSelectedOrderList();
             LinkedList<MatchResult> results = matcher.matchOrderBook(security);
             matchResults.addAll(results);
@@ -68,6 +68,12 @@ public class MatcherHandler {
 
         eventPublisher.publish(new SecurityStateChangedEvent(security.getIsin(), 
               security.getState()));
+    }
+
+    public boolean shouldBeTradedAfterChangingState(
+        MatcherState prevState, Security security) {
+      return (security.getState() == MatcherState.CONTINUOUS && 
+          prevState == MatcherState.AUCTION);
     }
 
 }
