@@ -119,7 +119,11 @@ public final class MatchResult {
       } else if (this.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
           events.add(new OrderActivatedEvent(this.remainder().getRqId(),
                 this.remainder().getOrderId()));
-      } 
+      } else if (this.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
+          events.add(new OpeningPriceEvent(this.security().getIsin(),
+                this.security().getAuctionData().getBestOpeningPrice(),
+                this.security().getAuctionData().getBestQuantity()));
+      }
 
       return events;
     }

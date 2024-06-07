@@ -71,10 +71,7 @@ public class OrderHandler {
     }
 
     public void deleteOrderPublishEvent(MatchResult matchResult){
-            if (matchResult.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
-                eventPublisher.publish(new OpeningPriceEvent(matchResult.security().getIsin()
-                        ,matchResult.security().getAuctionData().getBestOpeningPrice(), matchResult.security().getAuctionData().getBestQuantity()));
-            }
+        eventPublisher.publishMany(matchResult.events());
     }
 
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
