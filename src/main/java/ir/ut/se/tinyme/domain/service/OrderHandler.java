@@ -37,12 +37,15 @@ public class OrderHandler {
     }
 
     public void publishEvent(EnterOrderRq enterOrderRq, LinkedList<MatchResult> results) {
-        if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
-            eventPublisher.publish(new OrderAcceptedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
-        else
-            eventPublisher.publish(new OrderUpdatedEvent(enterOrderRq.getRequestId(), enterOrderRq.getOrderId()));
-
         List<Event> events = new ArrayList<Event>();
+
+        if (enterOrderRq.getRequestType() == OrderEntryType.NEW_ORDER)
+            events.add(new OrderAcceptedEvent(enterOrderRq.getRequestId(), 
+                  enterOrderRq.getOrderId()));
+        else
+            events.add(new OrderUpdatedEvent(enterOrderRq.getRequestId(), 
+                  enterOrderRq.getOrderId()));
+
         for (MatchResult matchResult : results) {
           events.addAll(matchResult.events());
         }
@@ -70,8 +73,12 @@ public class OrderHandler {
         }
     }
 
-    public void deleteOrderPublishEvent(MatchResult matchResult){
-        eventPublisher.publishMany(matchResult.events());
+    public void deleteOrderPublishEvent(MatchResult matchResult, DeleteOrderRq deleteOrderRq){
+        List<Event> events = new ArrayList<Event>();
+        if (matchResult != null) {
+          events.addAll(matchResult.events());
+        }
+        events.add(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
     }
 
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
@@ -79,9 +86,7 @@ public class OrderHandler {
             validateDeleteOrderRq(deleteOrderRq);
             Security security = securityRepository.findSecurityByIsin(deleteOrderRq.getSecurityIsin());
             MatchResult result = security.deleteOrder(deleteOrderRq);
-            if(result != null)
-                deleteOrderPublishEvent(result);
-            eventPublisher.publish(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
+            deleteOrderPublishEvent(result, deleteOrderRq);
         } catch (InvalidRequestException ex) {
             eventPublisher.publish(new OrderRejectedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId(), ex.getReasons()));
         }
