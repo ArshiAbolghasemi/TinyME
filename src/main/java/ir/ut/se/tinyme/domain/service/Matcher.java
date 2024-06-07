@@ -19,11 +19,7 @@ public class Matcher {
             if (matchingOrder == null)
                 break;
 
-            int tradePrice;
-            if (security.getState() == MatcherState.CONTINUOUS)
-                tradePrice = matchingOrder.getPrice();
-            else
-                 tradePrice = security.getAuctionData().getBestOpeningPrice();
+            int tradePrice = this.calculateTradePrice(matchingOrder, security);
 
             Trade trade = new Trade(newOrder.getSecurity(), tradePrice, Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
             if (newOrder.getSide() == Side.BUY) {
@@ -64,6 +60,13 @@ public class Matcher {
             return MatchResult.stopLimitOrderActivated (newOrder, trades);
         }
         return MatchResult.executed(newOrder, trades);
+    }
+
+    private int calculateTradePrice(Order matchingOrder, Security security) {
+       if (security.getState() == MatcherState.CONTINUOUS)
+         return matchingOrder.getPrice();
+
+       return security.getAuctionData().getBestOpeningPrice();
     }
 
     private LinkedList<MatchResult> checkAndActivateStopLimitOrderBook(Security security){
