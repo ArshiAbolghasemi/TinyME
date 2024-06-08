@@ -28,6 +28,7 @@ import java.util.List;
 
 import static ir.ut.se.tinyme.messaging.request.MatchingStateRq.CreateNewMatchingStateRq;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -139,13 +140,15 @@ public class AuctionMatchingStateTest {
         assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
         assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(15700);
         assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(285);
-        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass
-                (OpeningPriceEvent.class);
-        verify(mockEventPublisher).publish(openingPriceEventArgumentCaptor.capture());
-        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
-        assertThat(outputEvent.getOpeningPrice()).isEqualTo(15700);
-        assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
-        assertThat(outputEvent.getTradableQuantity()).isEqualTo(285);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OpeningPriceEvent &&
+                        ((OpeningPriceEvent) event).getOpeningPrice() == 15700 &&
+                        ((OpeningPriceEvent) event).getSecurityIsin().equals(security.getIsin()) &&
+                        ((OpeningPriceEvent) event).getTradableQuantity() == 285
+        ));
     }
 
     @Test
@@ -278,26 +281,34 @@ public class AuctionMatchingStateTest {
     }
 
     @Test
-    void check_opening_price_if_an_order_gets_updated(){
+    void check_opening_price_if_an_order_gets_updated() {
         MatchingStateRq matchingStateRq = CreateNewMatchingStateRq(security.getIsin(), MatcherState.AUCTION);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(security.getState()).isEqualTo(MatcherState.AUCTION);
-        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(),7,LocalDateTime.now(),
+
+        EnterOrderRq enterOrderRq = EnterOrderRq.createNewOrderRq(1, security.getIsin(), 7, LocalDateTime.now(),
                 Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
         mockOrderHandler.handleEnterOrder(enterOrderRq);
-        EnterOrderRq updateOrderRq = EnterOrderRq.createUpdateOrderRq(2, security.getIsin(),7,LocalDateTime.now(),
+
+        EnterOrderRq updateOrderRq = EnterOrderRq.createUpdateOrderRq(2, security.getIsin(), 7, LocalDateTime.now(),
                 Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
         mockOrderHandler.handleEnterOrder(updateOrderRq);
+
         assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
         assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
         assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(15700);
         assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(285);
+
         ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass(OpeningPriceEvent.class);
-        verify(mockEventPublisher).publish(openingPriceEventArgumentCaptor.capture());
-        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
-        assertThat(outputEvent.getOpeningPrice()).isEqualTo(15700);
-        assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
-        assertThat(outputEvent.getTradableQuantity()).isEqualTo(285);
+        verify(mockEventPublisher, times(2)).publish(openingPriceEventArgumentCaptor.capture());
+
+        List<OpeningPriceEvent> capturedEvents = openingPriceEventArgumentCaptor.getAllValues();
+
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event.getOpeningPrice() == 15700 &&
+                        event.getSecurityIsin().equals(security.getIsin()) &&
+                        event.getTradableQuantity() == 285
+        ));
     }
 
     @Test

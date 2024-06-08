@@ -18,7 +18,7 @@ public final class MatchResult {
     private final Security security;
 
     public static MatchResult executed(Order remainder, List<Trade> trades) {
-        return new MatchResult(MatchingOutcome.EXECUTED, remainder, new LinkedList<>(trades), null);
+        return new MatchResult(MatchingOutcome.EXECUTED, remainder, new LinkedList<>(trades), remainder.getSecurity());
     }
 
     public static MatchResult notEnoughCredit() {
@@ -34,7 +34,7 @@ public final class MatchResult {
     }
 
     public static MatchResult stopLimitOrderActivated(Order remainder, List<Trade> trades) {
-        return new MatchResult(MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED, remainder, new LinkedList<>(trades), null);
+        return new MatchResult(MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED, remainder, new LinkedList<>(trades), remainder.getSecurity());
     }
 
     public static MatchResult noMatchingOccurred(){
@@ -105,26 +105,27 @@ public final class MatchResult {
         }
       }
 
-      if (this.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
+      if (this.outcome() == MatchingOutcome.NOT_ENOUGH_CREDIT) {
+          events.add(new OrderRejectedEvent(this.remainder().getRqId(),
+                  this.remainder().getOrderId(), List.of(Message.BUYER_HAS_NOT_ENOUGH_CREDIT)));
+
+      } else if (this.outcome() == MatchingOutcome.NOT_ENOUGH_POSITIONS) {
           events.add(new OrderRejectedEvent(this.remainder().getRqId(),
                 this.remainder().getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
-          
-      } else if (this.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
+
+      } else if (this.outcome() == MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET) {
           events.add(new OrderRejectedEvent(this.remainder().getRqId(),
-                this.remainder().getOrderId(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
-      } else if (this.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
-          events.add(new OpeningPriceEvent(this.security().getIsin(),
-                this.security().getAuctionData().getBestOpeningPrice(),
-                this.security().getAuctionData().getBestQuantity()));
+                  this.remainder().getOrderId(), List.of(Message.MEQ_MIN_TRADE_NOT_MET)));
+
       } else if (this.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
           events.add(new OrderActivatedEvent(this.remainder().getRqId(),
-                this.remainder().getOrderId()));
+                  this.remainder().getOrderId()));
+          
       } else if (this.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
           events.add(new OpeningPriceEvent(this.security().getIsin(),
                 this.security().getAuctionData().getBestOpeningPrice(),
                 this.security().getAuctionData().getBestQuantity()));
       }
-
       return events;
     }
 

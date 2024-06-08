@@ -5,6 +5,7 @@ import ir.ut.se.tinyme.domain.service.Matcher;
 import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.Message;
+import ir.ut.se.tinyme.messaging.event.Event;
 import ir.ut.se.tinyme.messaging.event.OrderAcceptedEvent;
 import ir.ut.se.tinyme.messaging.event.OrderRejectedEvent;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
@@ -24,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.withSettings;
@@ -180,8 +182,16 @@ public class MinimumExecQuantityTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, security.getIsin(), 11,
                 LocalDateTime.now(), Side.BUY, 2000, 15820, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 500));
-        verify(mockEventPublisher).publish((new OrderAcceptedEvent(1, 11)));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher).publishMany(argumentCaptor.capture());
+        List<Event> events = argumentCaptor.getValue();
+        assertTrue(events.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent
+                        && ((OrderAcceptedEvent) event).getRequestId() == 1
+                        && ((OrderAcceptedEvent) event).getOrderId() == 11
+        ));
     }
+
 
     @Test
     void new_order_request_where_MEQ_is_out_of_range(){
