@@ -12,17 +12,11 @@ public class Matcher {
     public MatchResult match(Order newOrder) {
         OrderBook orderBook = newOrder.getSecurity().getOrderBook();
         LinkedList<Trade> trades = new LinkedList<>();
-        Security security = newOrder.getSecurity();
 
         while (orderBook.hasOrderOfType(newOrder.getSide().opposite()) && newOrder.getQuantity() > 0) {
             Order matchingOrder = orderBook.matchWithFirst(newOrder);
-            if (matchingOrder == null)
-                break;
-
-            int tradePrice = this.calculateTradePrice(matchingOrder, security);
-
-            Trade trade = new Trade(newOrder.getSecurity(), tradePrice, Math.min(newOrder.getQuantity(),
-                    matchingOrder.getQuantity()), newOrder, matchingOrder);
+            if (matchingOrder == null) break;
+            Trade trade = createTrade(newOrder, orderBook, matchingOrder);
             MatchResult result = handleCreditAfterTrade(newOrder, trades, trade);
             if (result != null) return result;
 
@@ -30,6 +24,12 @@ public class Matcher {
         }
 
         return getMatchResultAfterMatch(newOrder, trades);
+    }
+
+    private Trade createTrade(Order newOrder, OrderBook orderBook, Order matchingOrder){
+        int tradePrice = this.calculateTradePrice(matchingOrder, newOrder.getSecurity());
+        return new Trade(newOrder.getSecurity(), tradePrice, Math.min(newOrder.getQuantity(),
+                matchingOrder.getQuantity()), newOrder, matchingOrder);
     }
 
     private MatchResult getMatchResultAfterMatch(Order newOrder, LinkedList<Trade> trades) {
