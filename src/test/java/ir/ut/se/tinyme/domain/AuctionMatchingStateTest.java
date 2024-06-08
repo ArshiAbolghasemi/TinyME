@@ -25,6 +25,7 @@ import org.mockito.InOrder;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static ir.ut.se.tinyme.messaging.request.MatchingStateRq.CreateNewMatchingStateRq;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -299,16 +300,17 @@ public class AuctionMatchingStateTest {
         assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(15700);
         assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(285);
 
-        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass(OpeningPriceEvent.class);
-        verify(mockEventPublisher, times(2)).publish(openingPriceEventArgumentCaptor.capture());
-
-        List<OpeningPriceEvent> capturedEvents = openingPriceEventArgumentCaptor.getAllValues();
-
-        assertTrue(capturedEvents.stream().anyMatch(event ->
-                event.getOpeningPrice() == 15700 &&
-                        event.getSecurityIsin().equals(security.getIsin()) &&
-                        event.getTradableQuantity() == 285
-        ));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(3)).publishMany(argumentCaptor.capture());
+        List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+            assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                    event instanceof OpeningPriceEvent &&
+                            ((OpeningPriceEvent) event).getOpeningPrice() == 15700 &&
+                            ((OpeningPriceEvent) event).getSecurityIsin().equals(security.getIsin()) &&
+                            ((OpeningPriceEvent) event).getTradableQuantity() == 285
+            ));
     }
 
     @Test
