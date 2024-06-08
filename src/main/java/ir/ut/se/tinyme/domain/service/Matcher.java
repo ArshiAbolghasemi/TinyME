@@ -21,31 +21,12 @@ public class Matcher {
 
             int tradePrice = this.calculateTradePrice(matchingOrder, security);
 
-            Trade trade = new Trade(newOrder.getSecurity(), tradePrice, Math.min(newOrder.getQuantity(), matchingOrder.getQuantity()), newOrder, matchingOrder);
-            if (newOrder.getSide() == Side.BUY) {
-                if (trade.buyerHasEnoughCredit())
-                    trade.decreaseBuyersCredit();
-                else {
-                    rollbackTrades(newOrder, trades);
-                    return MatchResult.notEnoughCredit(newOrder);
-                }
-            }
-            trade.increaseSellersCredit();
-            trades.add(trade);
+            Trade trade = new Trade(newOrder.getSecurity(), tradePrice, Math.min(newOrder.getQuantity(),
+                    matchingOrder.getQuantity()), newOrder, matchingOrder);
+            MatchResult result = handleCreditAfterTrade(newOrder, trades, trade);
+            if (result != null) return result;
 
-            if (newOrder.getQuantity() >= matchingOrder.getQuantity()) {
-                newOrder.decreaseQuantity(matchingOrder.getQuantity());
-                orderBook.removeFirst(matchingOrder.getSide());
-                if (matchingOrder instanceof IcebergOrder icebergOrder) {
-                    icebergOrder.decreaseQuantity(matchingOrder.getQuantity());
-                    icebergOrder.replenish();
-                    if (icebergOrder.getQuantity() > 0)
-                        orderBook.enqueue(icebergOrder);
-                }
-            } else {
-                matchingOrder.decreaseQuantity(newOrder.getQuantity());
-                newOrder.makeQuantityZero();
-            }
+            handlePositionsAfterTrade(newOrder, orderBook, matchingOrder);
         }
 
         if (this.shouldRollbackTradesAfterMatch(newOrder)) {
@@ -60,6 +41,36 @@ public class Matcher {
             return MatchResult.stopLimitOrderActivated (newOrder, trades);
         }
         return MatchResult.executed(newOrder, trades);
+    }
+
+    private static void handlePositionsAfterTrade(Order newOrder, OrderBook orderBook, Order matchingOrder) {
+        if (newOrder.getQuantity() >= matchingOrder.getQuantity()) {
+            newOrder.decreaseQuantity(matchingOrder.getQuantity());
+            orderBook.removeFirst(matchingOrder.getSide());
+            if (matchingOrder instanceof IcebergOrder icebergOrder) {
+                icebergOrder.decreaseQuantity(matchingOrder.getQuantity());
+                icebergOrder.replenish();
+                if (icebergOrder.getQuantity() > 0)
+                    orderBook.enqueue(icebergOrder);
+            }
+        } else {
+            matchingOrder.decreaseQuantity(newOrder.getQuantity());
+            newOrder.makeQuantityZero();
+        }
+    }
+
+    private MatchResult handleCreditAfterTrade(Order newOrder, LinkedList<Trade> trades, Trade trade) {
+        if (newOrder.getSide() == Side.BUY) {
+            if (trade.buyerHasEnoughCredit())
+                trade.decreaseBuyersCredit();
+            else {
+                rollbackTrades(newOrder, trades);
+                return MatchResult.notEnoughCredit(newOrder);
+            }
+        }
+        trade.increaseSellersCredit();
+        trades.add(trade);
+        return null;
     }
 
     private boolean shouldRollbackTradesAfterMatch(Order newOrder)
@@ -135,7 +146,7 @@ public class Matcher {
 
         if (result.remainder().getQuantity() > 0) {
             if (order.getSide() == Side.BUY) {
-                order.getBroker().decreaseCreditBy((long)order.getPrice() * order.getQuantity());
+                order.getBroker().decreaseCreditBy((long)order.getValue());
             }
             order.getSecurity().getOrderBook().enqueue(result.remainder());
         }
