@@ -91,7 +91,6 @@ public class OrderBook {
                 }else if(price < bestPrice){
                     bestPrice = price;
                 }
-
             }
         }
         return new AuctionData(bestPrice, maxQuantity);

@@ -186,7 +186,7 @@ public class Matcher {
     public LinkedList<MatchResult> matchOrderBook(Security security){
         OrderBook selectedorderBook = security.getSelectedOrdersList();
         LinkedList<MatchResult> matchResults = new LinkedList<>();
-        while (selectedorderBook.getBuyQueue().size() > 0){
+        while (!selectedorderBook.getBuyQueue().isEmpty()){
             Order order = selectedorderBook.getBuyQueue().getFirst();
             selectedorderBook.removeFirst(Side.BUY);
             MatchResult result = this.match(order);
