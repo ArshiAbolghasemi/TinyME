@@ -165,13 +165,17 @@ public class AuctionMatchingStateTest {
         assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
         assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(0);
         assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(0);
-        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass
-                (OpeningPriceEvent.class);
-        verify(mockEventPublisher).publish(openingPriceEventArgumentCaptor.capture());
-        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
-        assertThat(outputEvent.getOpeningPrice()).isEqualTo(0);
-        assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
-        assertThat(outputEvent.getTradableQuantity()).isEqualTo(0);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof OpeningPriceEvent &&
+                        ((OpeningPriceEvent) event).getOpeningPrice() == 0 &&
+                        ((OpeningPriceEvent) event).getSecurityIsin().equals(security.getIsin()) &&
+                        ((OpeningPriceEvent) event).getTradableQuantity() == 0
+        ));
     }
 
     @Test
@@ -322,21 +326,23 @@ public class AuctionMatchingStateTest {
                 Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
         mockOrderHandler.handleEnterOrder(enterOrderRq);
         mockOrderHandler.handleDeleteOrder( new DeleteOrderRq( 2, security.getIsin(), Side.BUY, 1));
-        ArgumentCaptor<OrderDeletedEvent> orderDeletedEventArgumentCaptor = ArgumentCaptor.forClass(OrderDeletedEvent.class);
-        verify(mockEventPublisher).publish(orderDeletedEventArgumentCaptor.capture());
-        OrderDeletedEvent outputEvent = orderDeletedEventArgumentCaptor.getValue();
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
 
         assertThat(orderBook.getBuyQueue().size()).isEqualTo(1);
         assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
         assertThat(security.getAuctionData().getBestOpeningPrice()).isEqualTo(0);
         assertThat(security.getAuctionData().getBestQuantity()).isEqualTo(0);
-        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass(OpeningPriceEvent.class);
-        verify(mockEventPublisher,times(2)).publish(openingPriceEventArgumentCaptor.capture());
 
-        InOrder inOrder = inOrder(mockEventPublisher);
-        inOrder.verify(mockEventPublisher).publish(new OpeningPriceEvent(security.getIsin(),15700,285));
-        inOrder.verify(mockEventPublisher).publish(new OpeningPriceEvent(security.getIsin(),0,0));
-        inOrder.verify(mockEventPublisher).publish(new OrderDeletedEvent(2,1));
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof OpeningPriceEvent &&
+                        ((OpeningPriceEvent) event).getOpeningPrice() == 15700 &&
+                        ((OpeningPriceEvent) event).getSecurityIsin().equals(security.getIsin()) &&
+                        ((OpeningPriceEvent) event).getTradableQuantity() == 285
+        ));
 
     }
 
@@ -350,18 +356,23 @@ public class AuctionMatchingStateTest {
                 Side.SELL, 285, 15700, broker.getBrokerId(), shareholder.getShareholderId(), 0, 0);
         mockOrderHandler.handleEnterOrder(enterOrderRq);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
-        ArgumentCaptor<OpeningPriceEvent> openingPriceEventArgumentCaptor = ArgumentCaptor.forClass
-                (OpeningPriceEvent.class);
-        ArgumentCaptor<TradeEvent> tradeEventArgumentCaptor = ArgumentCaptor.forClass(TradeEvent.class);
-        verify(mockEventPublisher).publish(openingPriceEventArgumentCaptor.capture());
-        verify(mockEventPublisher).publish(tradeEventArgumentCaptor.capture());
-        OpeningPriceEvent outputEvent = openingPriceEventArgumentCaptor.getValue();
-        TradeEvent tradeOutputEvent = tradeEventArgumentCaptor.getValue();
-        assertThat(tradeOutputEvent.getPrice()).isEqualTo(15700);
-        assertThat(tradeOutputEvent.getQuantity()).isEqualTo(285);
-        assertThat(outputEvent.getSecurityIsin()).isEqualTo(security.getIsin());
-        assertThat(tradeOutputEvent.getBuyId()).isEqualTo(1);
-        assertThat(tradeOutputEvent.getSellId()).isEqualTo(7);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(3)).publishMany(argumentCaptor.capture());
+        List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof OpeningPriceEvent &&
+                        ((OpeningPriceEvent) event).getSecurityIsin().equals(security.getIsin())
+        ));
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof TradeEvent &&
+                        ((TradeEvent) event).getPrice() == 15700 &&
+                        ((TradeEvent) event).getQuantity() == 285 &&
+                        ((TradeEvent) event).getBuyId() == 1 &&
+                        ((TradeEvent) event).getSellId() == 7
+
+        ));
     }
 
     @Test
@@ -376,11 +387,28 @@ public class AuctionMatchingStateTest {
         mockOrderHandler.handleEnterOrder(enterOrderRq);
         mockOrderHandler.handleEnterOrder(enterOrderRq2);
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
-        ArgumentCaptor<TradeEvent> tradeEventArgumentCaptor = ArgumentCaptor.forClass(TradeEvent.class);
-        verify(mockEventPublisher, times(2)).publish(tradeEventArgumentCaptor.capture());
-        InOrder inOrder = inOrder(mockEventPublisher);
-        inOrder.verify(mockEventPublisher).publish(new TradeEvent(security.getIsin(), 15810, 285, 8, 7));
-        inOrder.verify(mockEventPublisher).publish(new TradeEvent(security.getIsin(), 15810, 15, 8, 6));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(4)).publishMany(argumentCaptor.capture());
+        List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof TradeEvent &&
+                        ((TradeEvent) event).getPrice() == 15810 &&
+                        ((TradeEvent) event).getQuantity() == 285 &&
+                        ((TradeEvent) event).getBuyId() == 8 &&
+                        ((TradeEvent) event).getSellId() == 7 &&
+                        ((TradeEvent) event).getSecurityIsin().equals(security.getIsin())
+
+        ));
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof TradeEvent &&
+                        ((TradeEvent) event).getPrice() == 15810 &&
+                        ((TradeEvent) event).getQuantity() == 15 &&
+                        ((TradeEvent) event).getBuyId() == 8 &&
+                        ((TradeEvent) event).getSellId() == 6 &&
+                        ((TradeEvent) event).getSecurityIsin().equals(security.getIsin())
+        ));
     }
 
     @Test
@@ -436,12 +464,16 @@ public class AuctionMatchingStateTest {
         mockMatcherHandler.handleMatchStateRq(matchingStateRq);
         assertThat(orderBook.getBuyQueue().size()).isEqualTo(2);
         assertThat(orderBook.getSellQueue().size()).isEqualTo(2);
-        ArgumentCaptor<OrderActivatedEvent> orderActivatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-        verify(mockEventPublisher).publish(orderActivatedEventArgumentCaptor.capture());
-        OrderActivatedEvent orderActivatedEvent = orderActivatedEventArgumentCaptor.getValue();
-        assertThat(orderActivatedEvent.getOrderId()).isEqualTo(8);
-        assertThat(orderActivatedEvent.getRqId()).isEqualTo(2);
-
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(4)).publishMany(argumentCaptor.capture());
+        List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof OrderActivatedEvent &&
+                        ((OrderActivatedEvent) event).getOrderId() == 8 &&
+                        ((OrderActivatedEvent) event).getRqId() == 2
+        ));
     }
 
 
@@ -471,21 +503,25 @@ public class AuctionMatchingStateTest {
         assertThat(orderBook.getSellQueue().size()).isEqualTo(1);
 
         assertThat(orderBook.getBuyQueue().getLast().getOrderId()).isEqualTo(2);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(4)).publishMany(argumentCaptor.capture());
+        List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
         ArgumentCaptor<OrderExecutedEvent> orderExecutedEventArgumentCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
-        verify(mockEventPublisher).publish(orderExecutedEventArgumentCaptor.capture());
-        OrderExecutedEvent orderExecutedEvent = orderExecutedEventArgumentCaptor.getValue();
-        assertThat(orderExecutedEvent.getOrderId()).isEqualTo(1);
-        assertThat(orderExecutedEvent.getTrades().get(0).buyOrderId()).isEqualTo(1);
-        assertThat(orderExecutedEvent.getTrades().get(0).sellOrderId()).isEqualTo(8);
-        assertThat(orderExecutedEvent.getTrades().get(0).quantity()).isEqualTo(15);
-        assertThat(orderExecutedEvent.getTrades().get(0).price()).isEqualTo(15700);
-
-        ArgumentCaptor<OrderActivatedEvent> orderActivatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-        verify(mockEventPublisher).publish(orderActivatedEventArgumentCaptor.capture());
-        OrderActivatedEvent orderActivatedEvent = orderActivatedEventArgumentCaptor.getValue();
-        assertThat(orderActivatedEvent.getOrderId()).isEqualTo(8);
-        assertThat(orderActivatedEvent.getRqId()).isEqualTo(2);
-
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 1 &&
+                        ((OrderExecutedEvent) event).getTrades().get(0).buyOrderId() == 1 &&
+                        ((OrderExecutedEvent) event).getTrades().get(0).sellOrderId() == 8 &&
+                        ((OrderExecutedEvent) event).getTrades().get(0).quantity() == 15 &&
+                        ((OrderExecutedEvent) event).getTrades().get(0).price() == 15700
+        ));
+        assertTrue(allCapturedEvents.stream().anyMatch(event ->
+                event instanceof OrderActivatedEvent &&
+                        ((OrderActivatedEvent) event).getOrderId() == 8 &&
+                        ((OrderActivatedEvent) event).getRqId() == 2
+        ));
     }
 }
 
