@@ -29,13 +29,14 @@ public class Matcher {
             handlePositionsAfterTrade(newOrder, orderBook, matchingOrder);
         }
 
-        if (this.shouldRollbackTradesAfterMatch(newOrder)) {
+        return getMatchResultAfterMatch(newOrder, trades);
+    }
+
+    private MatchResult getMatchResultAfterMatch(Order newOrder, LinkedList<Trade> trades) {
+        if ((newOrder.getQuantity() > 0 && newOrder.getSide() == Side.BUY &&
+                !newOrder.getBroker().hasEnoughCredit((long) newOrder.getPrice() * newOrder.getQuantity()))) {
             rollbackTrades(newOrder, trades);
             return MatchResult.notEnoughCredit(newOrder);
-        }
-
-        if(!trades.isEmpty()){
-            newOrder.getSecurity().setLastTradePrice(trades.getLast().getPrice());
         }
         if (newOrder.getStatus() == OrderStatus.ACTIVE){
             return MatchResult.stopLimitOrderActivated (newOrder, trades);
@@ -70,6 +71,7 @@ public class Matcher {
         }
         trade.increaseSellersCredit();
         trades.add(trade);
+        newOrder.getSecurity().setLastTradePrice(trades.getLast().getPrice());
         return null;
     }
 
