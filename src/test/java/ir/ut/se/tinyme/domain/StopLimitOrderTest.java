@@ -23,6 +23,7 @@ import ir.ut.se.tinyme.messaging.TradeDTO;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -527,22 +528,29 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
                 LocalDateTime.now(), Side.SELL, 200, 15500, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 15000));
-        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
-        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
-        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
-        verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
-        verify(mockEventPublisher).publish(orderExecutedCaptor.capture());
-        OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(11);
-
         TradeDTO t = new TradeDTO(security.getIsin(),15700,200,1,11);
-
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
         InOrder inOrder = inOrder(mockEventPublisher);
-        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(1, 11));
-        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(1,11));
-        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(1, 11, List.of(t)));
-        inOrder.verifyNoMoreInteractions();
+        inOrder.verify(mockEventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 1 &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 11
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderActivatedEvent &&
+                        ((OrderActivatedEvent) event).getRqId() == 1 &&
+                        ((OrderActivatedEvent) event).getOrderId() == 11
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 11 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 1 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(t))
+        ));
     }
 
     @Test
@@ -556,26 +564,71 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(6, security.getIsin(), 13,
                 LocalDateTime.now(), Side.BUY, 30, 400, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 0));
-        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
-        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
-        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
-        verify(mockEventPublisher, times(3)).publish(orderAcceptedCaptor.capture());
-        verify(mockEventPublisher, times(3)).publish(orderExecutedCaptor.capture());
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        InOrder inOrder = inOrder(mockEventPublisher);
+        inOrder.verify(mockEventPublisher, times(3)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        long executionEventCount = capturedEvents.stream()
+                .filter(event -> event instanceof OrderExecutedEvent)
+                .count();
+
+        long acceptEventCount = capturedEvents.stream()
+                .filter(event -> event instanceof OrderAcceptedEvent)
+                .count();
+
+        long orderActivatedEventCount = capturedEvents.stream()
+                .filter(event -> event instanceof OrderActivatedEvent)
+                .count();
+
+        assertEquals(3, executionEventCount);
+        assertEquals(3, acceptEventCount);
+        assertEquals(1, orderActivatedEventCount);
 
         TradeDTO t1 = new TradeDTO(security.getIsin(),200,65,11,10);
         TradeDTO t2 = new TradeDTO(security.getIsin(),400,30,13,19);
         TradeDTO t3 = new TradeDTO(security.getIsin(),400,5,12,19);
 
 
-        InOrder inOrder = inOrder(mockEventPublisher);
-        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(4, 11));
-        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(4, 11, List.of(t1)));
-        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(5, 12));
-        inOrder.verify(mockEventPublisher).publish(new OrderAcceptedEvent(6, 13));
-        inOrder.verify(mockEventPublisher).publish(new OrderActivatedEvent(5,12));
-        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(5, 12, List.of(t3)));
-        inOrder.verify(mockEventPublisher).publish(new OrderExecutedEvent(6, 13, List.of(t2)));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 4 &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 11
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 5 &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 12
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 6 &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 13
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderActivatedEvent &&
+                        ((OrderActivatedEvent) event).getRqId() == 5 &&
+                        ((OrderActivatedEvent) event).getOrderId() == 12
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 11 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 4 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(t1))
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 13 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 6 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(t2))
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 12 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 5 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(t3))
+        ));
         inOrder.verifyNoMoreInteractions();
     }
 
