@@ -156,12 +156,10 @@ public class OrderHandler {
         int stopPrice = enterOrderRq.getStopPrice();
         if ( stopPrice < 0)
             errors.add(Message.INVALID_STOP_PRICE_VALUE);
-        if (stopPrice != 0 && enterOrderRq.getPeakSize() != 0){
+        if (stopPrice != 0 && enterOrderRq.getPeakSize() != 0)
             errors.add(Message.ICEBERG_ORDERS_CANT_BE_STOP_PRICE_ORDERS);
-        }
-        if (stopPrice != 0 && enterOrderRq.getMinimumExecutionQuantity() != 0){
+        if (stopPrice != 0 && enterOrderRq.getMinimumExecutionQuantity() != 0)
            errors.add(Message.MEQ_ORDERS_CANT_BE_STOP_PRICE_ORDERS);
-        }
     }
 
     private boolean isValidMinimumExecutionQuantityRange(EnterOrderRq enterOrderRq) {
