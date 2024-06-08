@@ -13,4 +13,36 @@ import lombok.experimental.SuperBuilder;
 public class MEQOrder extends Order {
     @Builder.Default
     protected int minimumExecutionQuantity = 0;
+
+    @Override
+    public Order snapshot() {
+        return builder()
+                .orderId(orderId)
+                .security(security)
+                .side(side)
+                .quantity(quantity)
+                .price(price)
+                .broker(broker)
+                .shareholder(shareholder)
+                .entryTime(entryTime)
+                .status(OrderStatus.SNAPSHOT)
+                .minimumExecutionQuantity(minimumExecutionQuantity)
+                .build();
+    }
+
+    @Override
+    public Order snapshotWithQuantity(int newQuantity) {
+        return builder()
+                .orderId(orderId)
+                .security(security)
+                .side(side)
+                .quantity(newQuantity)
+                .price(price)
+                .broker(broker)
+                .shareholder(shareholder)
+                .entryTime(entryTime)
+                .status(OrderStatus.SNAPSHOT)
+                .minimumExecutionQuantity(minimumExecutionQuantity)
+                .build();
+    }
 }
