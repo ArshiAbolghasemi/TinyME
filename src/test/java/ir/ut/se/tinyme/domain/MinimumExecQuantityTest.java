@@ -258,7 +258,7 @@ public class MinimumExecQuantityTest {
                 .minimumExecutionQuantity(100)
                 .build();
         OrderBook baseOrderBook = security.getOrderBook();
-        LinkedList<MatchResult> results =  matcher.execute(newOrder, newOrder.getMinimumExecutionQuantity());;
+        LinkedList<MatchResult> results =  matcher.execute(newOrder);
         assertThat(results).hasSize(1);
         MatchResult result = results.get(0);
         assertThat(result).isEqualTo(MatchResult.minimumExecutionQuantityNotMet(newOrder));

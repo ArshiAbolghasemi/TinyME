@@ -158,6 +158,12 @@ public class Matcher {
         LinkedList<MatchResult> results = new LinkedList<>();
         if (order.getSecurity().getState() == MatcherState.CONTINUOUS) {
             MatchResult mainReqResult = match(order);
+            if(order instanceof MEQOrder)
+            {
+                results = processMinimumExecutionQuantityResult(order, mainReqResult);
+                if (results != null)
+                    return results;
+            }
             this.processMatchResult(mainReqResult, order);
             results = checkAndActivateStopLimitOrderBook(order.getSecurity());
             results.add(mainReqResult);
@@ -167,20 +173,14 @@ public class Matcher {
         return results;
     }
 
-    public LinkedList<MatchResult> execute(Order order, int minimumExecutionQuantity) {
-        assert order.getStatus() == OrderStatus.NEW;
+    private LinkedList<MatchResult> processMinimumExecutionQuantityResult(Order order, MatchResult mainReqResult) {
         LinkedList<MatchResult> results = new LinkedList<>();
-
-        MatchResult result = match(order);
-        if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
-            rollbackTrades(order, result.trades());
+        if (!this.isMinimumExecutionQuantityMet(mainReqResult, ((MEQOrder) order).getMinimumExecutionQuantity())) {
+            rollbackTrades(order, mainReqResult.trades());
             results.add(MatchResult.minimumExecutionQuantityNotMet(order));
             return results;
         }
-        this.processMatchResult(result, order);
-        results = checkAndActivateStopLimitOrderBook(order.getSecurity());
-        results.add(result);
-        return results;
+        return null;
     }
 
     public LinkedList<MatchResult> matchOrderBook(Security security){

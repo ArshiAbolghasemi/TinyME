@@ -59,8 +59,6 @@ public class Security {
                 stopLimitOrderList.enqueue(order);
                 results.add(MatchResult.noMatchingOccurred());
                 return results;
-            } else if (order instanceof MEQOrder) {
-                return matcher.execute(order, ((MEQOrder) order).getMinimumExecutionQuantity());
             } else {
                 return matcher.execute(order);
             }
