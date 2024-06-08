@@ -103,16 +103,12 @@ public class Security {
     }
 
     private LinkedList<MatchResult> UpdateNormalOrder(EnterOrderRq updateOrderRq, Matcher matcher, LinkedList<MatchResult> results, Order order) {
-        boolean losesPriority = order.isQuantityIncreased(updateOrderRq.getQuantity())
-                || updateOrderRq.getPrice() != order.getPrice()
-                || ((order instanceof IcebergOrder icebergOrder) && (icebergOrder.getPeakSize() < updateOrderRq.getPeakSize()));
-
         if (updateOrderRq.getSide() == Side.BUY) {
             order.getBroker().increaseCreditBy(order.getValue());
         }
         Order originalOrder = order.snapshot();
         order.updateFromRequest(updateOrderRq);
-        if (!losesPriority) {
+        if (!LosesPriority(originalOrder, updateOrderRq)) {
             if (updateOrderRq.getSide() == Side.BUY) {
                 order.getBroker().decreaseCreditBy(order.getValue());
             }
@@ -131,8 +127,13 @@ public class Security {
         return results;
     }
 
-    private static LinkedList<MatchResult> UpdateStopLimitOrder(EnterOrderRq updateOrderRq, LinkedList<MatchResult> results, Order order) {
+    private boolean LosesPriority(Order order, EnterOrderRq updateOrderRq) {
+        return order.isQuantityIncreased(updateOrderRq.getQuantity())
+                || updateOrderRq.getPrice() != order.getPrice()
+                || ((order instanceof IcebergOrder icebergOrder) && (icebergOrder.getPeakSize() < updateOrderRq.getPeakSize()));
+    }
 
+    private static LinkedList<MatchResult> UpdateStopLimitOrder(EnterOrderRq updateOrderRq, LinkedList<MatchResult> results, Order order) {
         if (order.getSide() == Side.BUY) {
             order.getBroker().increaseCreditBy(order.getValue());
         }
