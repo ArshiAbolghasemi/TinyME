@@ -42,13 +42,13 @@ public class Security {
         LinkedList<MatchResult> results = new LinkedList<>();
         if (enterOrderRq.getSide() == Side.SELL && !shareholder.hasEnoughPositionsOn(this,
                 orderBook.totalSellQuantityByShareholder(shareholder) + enterOrderRq.getQuantity())){
-            results.add(MatchResult.notEnoughPositions());
+            results.add(MatchResult.notEnoughPositions(OrderFactory.getInstance().createOrder(enterOrderRq, shareholder, this, broker)));
             return results ;
         }
 
         if (enterOrderRq.getSide() == Side.BUY && (enterOrderRq.getStopPrice() != 0 || this.state == MatcherState.AUCTION)) {
             if (!broker.hasEnoughCredit((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity())) {
-                results.add(MatchResult.notEnoughCredit());
+                results.add(MatchResult.notEnoughCredit(OrderFactory.getInstance().createOrder(enterOrderRq, shareholder, this, broker)));
                 return results;
             }
             broker.decreaseCreditBy((long) enterOrderRq.getPrice() * enterOrderRq.getQuantity());
@@ -166,7 +166,7 @@ public class Security {
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
                 orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())){
-            results.add(MatchResult.notEnoughPositions());
+            results.add(MatchResult.notEnoughPositions(order));
             return results;
         }
 
@@ -214,7 +214,7 @@ public class Security {
         if (updateOrderRq.getSide() == Side.BUY && !order.getBroker().hasEnoughCredit(
                 (long) updateOrderRq.getPrice() * updateOrderRq.getQuantity())) {
             order.getBroker().decreaseCreditBy(order.getValue());
-            results.add(MatchResult.notEnoughCredit());
+            results.add(MatchResult.notEnoughCredit(order));
             return results;
         }
         order.updateFromRequest(updateOrderRq);

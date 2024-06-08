@@ -27,7 +27,7 @@ public class Matcher {
                     trade.decreaseBuyersCredit();
                 else {
                     rollbackTrades(newOrder, trades);
-                    return MatchResult.notEnoughCredit();
+                    return MatchResult.notEnoughCredit(newOrder);
                 }
             }
             trade.increaseSellersCredit();
@@ -50,7 +50,7 @@ public class Matcher {
 
         if (this.shouldRollbackTradesAfterMatch(newOrder)) {
             rollbackTrades(newOrder, trades);
-            return MatchResult.notEnoughCredit();
+            return MatchResult.notEnoughCredit(newOrder);
         }
 
         if(!trades.isEmpty()){
@@ -174,7 +174,7 @@ public class Matcher {
         MatchResult result = match(order);
         if (minimumExecutionQuantity != 0 && !this.isMinimumExecutionQuantityMet(result, minimumExecutionQuantity)) {
             rollbackTrades(order, result.trades());
-            results.add(MatchResult.minimumExecutionQuantityNotMet());
+            results.add(MatchResult.minimumExecutionQuantityNotMet(order));
             return results;
         }
         this.processMatchResult(result, order);

@@ -21,16 +21,16 @@ public final class MatchResult {
         return new MatchResult(MatchingOutcome.EXECUTED, remainder, new LinkedList<>(trades), remainder.getSecurity());
     }
 
-    public static MatchResult notEnoughCredit() {
-        return new MatchResult(MatchingOutcome.NOT_ENOUGH_CREDIT, null, new LinkedList<>(), null);
+    public static MatchResult notEnoughCredit(Order remainder) {
+        return new MatchResult(MatchingOutcome.NOT_ENOUGH_CREDIT, remainder, new LinkedList<>(), null);
     }
 
-    public static MatchResult notEnoughPositions() {
-        return new MatchResult(MatchingOutcome.NOT_ENOUGH_POSITIONS, null, new LinkedList<>(), null);
+    public static MatchResult notEnoughPositions(Order remainder) {
+        return new MatchResult(MatchingOutcome.NOT_ENOUGH_POSITIONS, remainder, new LinkedList<>(), null);
     }
 
-    public static MatchResult minimumExecutionQuantityNotMet() {
-        return new MatchResult(MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET, null, new LinkedList<>(), null);
+    public static MatchResult minimumExecutionQuantityNotMet(Order remainder) {
+        return new MatchResult(MatchingOutcome.MINIMUM_EXECUTION_QUANTITY_NOT_MET, remainder, new LinkedList<>(), null);
     }
 
     public static MatchResult stopLimitOrderActivated(Order remainder, List<Trade> trades) {
@@ -120,7 +120,7 @@ public final class MatchResult {
       } else if (this.outcome() == MatchingOutcome.STOP_LIMIT_ORDER_ACTIVATED) {
           events.add(new OrderActivatedEvent(this.remainder().getRqId(),
                   this.remainder().getOrderId()));
-          
+
       } else if (this.outcome() == MatchingOutcome.NEW_OPEN_PRICE_CALCULATED) {
           events.add(new OpeningPriceEvent(this.security().getIsin(),
                 this.security().getAuctionData().getBestOpeningPrice(),
