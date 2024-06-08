@@ -25,6 +25,8 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -244,7 +246,14 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
                 LocalDateTime.now(), Side.SELL, 200, 15820, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 15800));
-        verify(mockEventPublisher).publish((new OrderAcceptedEvent(1, 11)));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 11 &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 1
+        ));
     }
 
     @Test
@@ -252,12 +261,13 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
                 LocalDateTime.now(), Side.SELL, 200, 15820, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 15000));
-        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
-        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
-        verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
-        OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(11);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderActivatedEvent &&
+                        ((OrderActivatedEvent) event).getOrderId() == 11
+        ));
     }
 
     @Test
@@ -265,14 +275,13 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(1, security.getIsin(), 11,
                 LocalDateTime.now(), Side.SELL, 200, 15500, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 15000));
-        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
-        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
-        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
-        verify(mockEventPublisher).publish(orderAcceptedCaptor.capture());
-        verify(mockEventPublisher).publish(orderExecutedCaptor.capture());
-        OrderActivatedEvent outputEvent = orderActivatedCaptor.getValue();
-        assertThat(outputEvent.getRqId()).isEqualTo(1);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderActivatedEvent &&
+                        ((OrderActivatedEvent) event).getRqId() == 1
+        ));
     }
 
     @Test
@@ -357,13 +366,27 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createNewStopOrderRequest(6, security.getIsin(), 13,
                 LocalDateTime.now(), Side.BUY, 30, 400, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 0));
-        ArgumentCaptor<OrderActivatedEvent> orderActivatedCaptor = ArgumentCaptor.forClass(OrderActivatedEvent.class);
-        ArgumentCaptor<OrderAcceptedEvent> orderAcceptedCaptor = ArgumentCaptor.forClass(OrderAcceptedEvent.class);
-        ArgumentCaptor<OrderExecutedEvent> orderExecutedCaptor = ArgumentCaptor.forClass(OrderExecutedEvent.class);
-        verify(mockEventPublisher).publish(orderActivatedCaptor.capture());
-        verify(mockEventPublisher, times(3)).publish(orderAcceptedCaptor.capture());
-        verify(mockEventPublisher, times(3)).publish(orderExecutedCaptor.capture());
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(3)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        long executionEventCount = capturedEvents.stream()
+                .filter(event -> event instanceof OrderExecutedEvent)
+                .count();
 
+        long acceptEventCount = capturedEvents.stream()
+                .filter(event -> event instanceof OrderAcceptedEvent)
+                .count();
+
+        long orderActivatedEventCount = capturedEvents.stream()
+                .filter(event -> event instanceof OrderActivatedEvent)
+                .count();
+
+        // Verify the counts
+        assertEquals(3, executionEventCount);
+        assertEquals(3, acceptEventCount);
+        assertEquals(1, orderActivatedEventCount);
     }
 
     @Test
@@ -409,11 +432,15 @@ public class StopLimitOrderTest {
                 LocalDateTime.now(), Side.SELL, 10, 15790, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 0));
         assertThat(security.getOrderBook().getSellQueue().get(2).getQuantity()).isEqualTo(10);
-        ArgumentCaptor<OrderUpdatedEvent> orderUpdatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderUpdatedEvent.class);
-        verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
-        OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(14);
-//        assertThat(broker.getCredit()).isEqualTo(100_000_000L - 10 * 15790);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderUpdatedEvent &&
+                        ((OrderUpdatedEvent) event).getOrderId() == 14
+        ));
     }
 
     @Test
@@ -424,10 +451,15 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createUpdateStopLimitOrderRq(5, security.getIsin(), 14,
                 LocalDateTime.now(), Side.BUY, 15, 150, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 11));
-        ArgumentCaptor<OrderUpdatedEvent> orderUpdatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderUpdatedEvent.class);
-        verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
-        OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderUpdatedEvent &&
+                        ((OrderUpdatedEvent) event).getOrderId() == 14
+        ));
         assertThat(broker.getCredit()).isEqualTo(100_000_000L - 15 * 150);
     }
 
@@ -440,11 +472,16 @@ public class StopLimitOrderTest {
         mockOrderHandler.handleEnterOrder(EnterOrderRq.createUpdateStopLimitOrderRq(5, security.getIsin(), 14,
                 LocalDateTime.now(), Side.BUY, 5, 200, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 11));
-        ArgumentCaptor<OrderUpdatedEvent> orderUpdatedEventArgumentCaptor = ArgumentCaptor.forClass(OrderUpdatedEvent.class);
-        verify(mockEventPublisher).publish(orderUpdatedEventArgumentCaptor.capture());
-        OrderUpdatedEvent outputEvent = orderUpdatedEventArgumentCaptor.getValue();
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderUpdatedEvent &&
+                        ((OrderUpdatedEvent) event).getOrderId() == 14
+        ));
         assertThat(security.getStopLimitOrderList().findByOrderId(Side.BUY,14).getRqId()).isEqualTo(5);
-        assertThat(outputEvent.getOrderId()).isEqualTo(14);
         assertThat(broker.getCredit()).isEqualTo(100_000_000L - 5 * 200);
     }
 
@@ -454,11 +491,17 @@ public class StopLimitOrderTest {
                 LocalDateTime.now(), Side.BUY, 5, 150, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 11));
         mockOrderHandler.handleDeleteOrder( new DeleteOrderRq( 6, security.getIsin(), Side.BUY, 14));
-        ArgumentCaptor<OrderDeletedEvent> orderDeletedEventArgumentCaptor = ArgumentCaptor.forClass(OrderDeletedEvent.class);
-        verify(mockEventPublisher).publish(orderDeletedEventArgumentCaptor.capture());
-        OrderDeletedEvent outputEvent = orderDeletedEventArgumentCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
         assertThat(security.getStopLimitOrderList().getBuyQueue().isEmpty());
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderDeletedEvent &&
+                        ((OrderDeletedEvent) event).getOrderId() == 14
+        ));
+
     }
 
     @Test
@@ -467,10 +510,15 @@ public class StopLimitOrderTest {
                 LocalDateTime.now(), Side.BUY, 5, 150, broker.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0, 9));
         mockOrderHandler.handleDeleteOrder( new DeleteOrderRq( 6, security.getIsin(), Side.BUY, 14));
-        ArgumentCaptor<OrderDeletedEvent> orderDeletedEventArgumentCaptor = ArgumentCaptor.forClass(OrderDeletedEvent.class);
-        verify(mockEventPublisher).publish(orderDeletedEventArgumentCaptor.capture());
-        OrderDeletedEvent outputEvent = orderDeletedEventArgumentCaptor.getValue();
-        assertThat(outputEvent.getOrderId()).isEqualTo(14);
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getAllValues().stream()
+                .flatMap(List::stream)
+                .toList();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderDeletedEvent &&
+                        ((OrderDeletedEvent) event).getOrderId() == 14
+        ));
         assertThat(security.getOrderBook().getBuyQueue().size()).isEqualTo(5);
     }
 

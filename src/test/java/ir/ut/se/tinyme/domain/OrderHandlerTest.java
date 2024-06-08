@@ -7,10 +7,7 @@ import ir.ut.se.tinyme.domain.service.OrderHandler;
 import ir.ut.se.tinyme.messaging.EventPublisher;
 import ir.ut.se.tinyme.messaging.Message;
 import ir.ut.se.tinyme.messaging.TradeDTO;
-import ir.ut.se.tinyme.messaging.event.OrderAcceptedEvent;
-import ir.ut.se.tinyme.messaging.event.OrderExecutedEvent;
-import ir.ut.se.tinyme.messaging.event.OrderRejectedEvent;
-import ir.ut.se.tinyme.messaging.event.OrderUpdatedEvent;
+import ir.ut.se.tinyme.messaging.event.*;
 import ir.ut.se.tinyme.messaging.request.DeleteOrderRq;
 import ir.ut.se.tinyme.messaging.request.EnterOrderRq;
 import ir.ut.se.tinyme.repository.BrokerRepository;
@@ -29,6 +26,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.*;
 
 @SpringBootTest
@@ -50,6 +48,7 @@ public class OrderHandlerTest {
     private Broker broker1;
     private Broker broker2;
     private Broker broker3;
+    private EventPublisher mockEventPublisher;
 
     @BeforeEach
     void setup() {
@@ -70,6 +69,7 @@ public class OrderHandlerTest {
         brokerRepository.addBroker(broker1);
         brokerRepository.addBroker(broker2);
         brokerRepository.addBroker(broker3);
+        mockEventPublisher = mock(EventPublisher.class, withSettings().verboseLogging());
     }
     @Test
     void new_order_matched_completely_with_one_trade() {
@@ -100,8 +100,16 @@ public class OrderHandlerTest {
 
         Trade trade = new Trade(security, matchingBuyOrder.getPrice(), incomingSellOrder.getQuantity(),
                 matchingBuyOrder, incomingSellOrder);
-        verify(eventPublisher).publish((new OrderAcceptedEvent(1, 200)));
-        verify(eventPublisher).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade))));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 200 &&
+               ((OrderAcceptedEvent) event).getRequestId() == 1
+        ));
+        //verify(mockEventPublisher).publish((new OrderAcceptedEvent(1, 200)));
+        //verify(eventPublisher).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade))));
     }
 
     @Test

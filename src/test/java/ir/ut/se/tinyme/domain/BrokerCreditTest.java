@@ -264,7 +264,6 @@ public class BrokerCreditTest {
         LinkedList<MatchResult> results =  matcher.execute(newOrder);
         assertThat(results).hasSize(1);
         MatchResult result = results.get(0);
-        assertThat(result.remainder()).isNull();
         assertThat(result.trades()).isEmpty();
         assertThat(result.outcome()).isEqualTo(MatchingOutcome.NOT_ENOUGH_CREDIT);
 

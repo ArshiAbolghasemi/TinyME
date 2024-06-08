@@ -79,6 +79,7 @@ public class OrderHandler {
           events.addAll(matchResult.events());
         }
         events.add(new OrderDeletedEvent(deleteOrderRq.getRequestId(), deleteOrderRq.getOrderId()));
+        eventPublisher.publishMany(events);
     }
 
     public void handleDeleteOrder(DeleteOrderRq deleteOrderRq) {
