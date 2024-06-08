@@ -327,7 +327,7 @@ public class AuctionMatchingStateTest {
         mockOrderHandler.handleEnterOrder(enterOrderRq);
         mockOrderHandler.handleDeleteOrder( new DeleteOrderRq( 2, security.getIsin(), Side.BUY, 1));
         ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
-        verify(mockEventPublisher, times(2)).publishMany(argumentCaptor.capture());
+        verify(mockEventPublisher, times(3)).publishMany(argumentCaptor.capture());
         List<Event> allCapturedEvents = argumentCaptor.getAllValues().stream()
                 .flatMap(List::stream)
                 .toList();
