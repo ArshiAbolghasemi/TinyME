@@ -45,10 +45,23 @@ public class OrderFactory {
                     .shareholder(shareholder)
                     .entryTime(enterOrderRq.getEntryTime())
                     .status(OrderStatus.NEW)
-                    .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
                     .rqId(enterOrderRq.getRequestId())
                     .build();
-        } else {
+        } else  if (enterOrderRq.getMinimumExecutionQuantity() != 0) {
+            return  MEQOrder.builder()
+                    .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
+                    .orderId(enterOrderRq.getOrderId())
+                    .security(security)
+                    .side(enterOrderRq.getSide())
+                    .quantity(enterOrderRq.getQuantity())
+                    .price(enterOrderRq.getPrice())
+                    .broker(broker)
+                    .shareholder(shareholder)
+                    .entryTime(enterOrderRq.getEntryTime())
+                    .status(OrderStatus.NEW)
+                    .rqId(enterOrderRq.getRequestId())
+                    .build();
+        } else{
             return Order.builder()
                     .orderId(enterOrderRq.getOrderId())
                     .security(security)
@@ -58,7 +71,6 @@ public class OrderFactory {
                     .broker(broker)
                     .shareholder(shareholder)
                     .entryTime(enterOrderRq.getEntryTime())
-                    .minimumExecutionQuantity(enterOrderRq.getMinimumExecutionQuantity())
                     .status(OrderStatus.NEW)
                     .rqId(enterOrderRq.getRequestId())
                     .build();

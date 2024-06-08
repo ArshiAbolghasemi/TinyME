@@ -23,8 +23,6 @@ public class Order {
     protected LocalDateTime entryTime = LocalDateTime.now();
     @Builder.Default
     protected OrderStatus status = OrderStatus.NEW;
-    @Builder.Default
-    protected int minimumExecutionQuantity = 0;
     protected long rqId;
 
     public Order snapshot() {
@@ -38,7 +36,6 @@ public class Order {
                 .shareholder(shareholder)
                 .entryTime(entryTime)
                 .status(OrderStatus.SNAPSHOT)
-                .minimumExecutionQuantity(minimumExecutionQuantity)
                 .rqId(rqId)
                 .build();
     }
@@ -54,7 +51,6 @@ public class Order {
                 .shareholder(shareholder)
                 .entryTime(entryTime)
                 .status(OrderStatus.SNAPSHOT)
-                .minimumExecutionQuantity(minimumExecutionQuantity)
                 .rqId(rqId)
                 .build();
     }
@@ -70,7 +66,6 @@ public class Order {
                 .shareholder(shareholder)
                 .entryTime(entryTime)
                 .status(OrderStatus.SNAPSHOT)
-                .minimumExecutionQuantity(minimumExecutionQuantity)
                 .rqId(RQ)
                 .build();
     }

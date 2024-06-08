@@ -59,8 +59,8 @@ public class Security {
                 stopLimitOrderList.enqueue(order);
                 results.add(MatchResult.noMatchingOccurred());
                 return results;
-            } else if (order.getMinimumExecutionQuantity() != 0) {
-                return matcher.execute(order, order.getMinimumExecutionQuantity());
+            } else if (order instanceof MEQOrder) {
+                return matcher.execute(order, ((MEQOrder) order).getMinimumExecutionQuantity());
             } else {
                 return matcher.execute(order);
             }
@@ -161,7 +161,7 @@ public class Security {
             throw new InvalidRequestException(Message.INVALID_PEAK_SIZE);
         if (!(order instanceof IcebergOrder) && updateOrderRq.getPeakSize() != 0)
             throw new InvalidRequestException(Message.CANNOT_SPECIFY_PEAK_SIZE_FOR_A_NON_ICEBERG_ORDER);
-        if (updateOrderRq.getMinimumExecutionQuantity() != order.getMinimumExecutionQuantity())
+        if (order instanceof MEQOrder && updateOrderRq.getMinimumExecutionQuantity() != ((MEQOrder) order).getMinimumExecutionQuantity())
             throw new InvalidRequestException(Message.COULD_NOT_UPDATE_MEQ);
         if (updateOrderRq.getStopPrice() != 0 && !(order instanceof StopLimitOrder)) {
             throw new InvalidRequestException(Message.COULD_NOT_UPDATE_STOP_LIMIT_PRICE_FOR_NON_LIMIT_PRICE_ORDER_OR_NON_ACTIVE_STOPLIMIT_ORDER);

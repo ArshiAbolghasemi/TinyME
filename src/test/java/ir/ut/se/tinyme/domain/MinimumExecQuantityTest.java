@@ -208,7 +208,7 @@ public class MinimumExecQuantityTest {
 
     @Test
     void order_update_where_MEQ_should_not_change(){
-        Order newOrder = Order.builder()
+        MEQOrder newOrder = MEQOrder.builder()
                 .orderId(11)
                 .security(security)
                 .side(Side.BUY)
@@ -228,7 +228,7 @@ public class MinimumExecQuantityTest {
 
     @Test
     void order_update_where_update_request_does_not_change_MEQ(){
-        Order newOrder = Order.builder()
+        MEQOrder newOrder = MEQOrder.builder()
                 .orderId(11)
                 .security(security)
                 .side(Side.BUY)
@@ -247,7 +247,7 @@ public class MinimumExecQuantityTest {
 
     @Test
     void new_order_where_order_does_not_match(){
-        Order newOrder = Order.builder()
+        MEQOrder newOrder = MEQOrder.builder()
                 .orderId(11)
                 .security(security)
                 .side(Side.BUY)
