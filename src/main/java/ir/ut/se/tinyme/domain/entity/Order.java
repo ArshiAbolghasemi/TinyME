@@ -59,6 +59,22 @@ public class Order {
                 .build();
     }
 
+    public Order snapshotWithRQ(long RQ) {
+        return builder()
+                .orderId(orderId)
+                .security(security)
+                .side(side)
+                .quantity(quantity)
+                .price(price)
+                .broker(broker)
+                .shareholder(shareholder)
+                .entryTime(entryTime)
+                .status(OrderStatus.SNAPSHOT)
+                .minimumExecutionQuantity(minimumExecutionQuantity)
+                .rqId(RQ)
+                .build();
+    }
+
     public boolean matches(Order other) {
         if (this.getSecurity().getState() == MatcherState.CONTINUOUS){
             if (side == Side.BUY)

@@ -162,11 +162,10 @@ public class Security {
         Order order;
         order = FindOrder(updateOrderRq);
         ValidateUpdateOrder(updateOrderRq, order);
-
         if (updateOrderRq.getSide() == Side.SELL &&
                 !order.getShareholder().hasEnoughPositionsOn(this,
                 orderBook.totalSellQuantityByShareholder(order.getShareholder()) - order.getQuantity() + updateOrderRq.getQuantity())){
-            results.add(MatchResult.notEnoughPositions(order));
+            results.add(MatchResult.notEnoughPositions(order.snapshotWithRQ(updateOrderRq.getRequestId())));
             return results;
         }
 
@@ -214,7 +213,7 @@ public class Security {
         if (updateOrderRq.getSide() == Side.BUY && !order.getBroker().hasEnoughCredit(
                 (long) updateOrderRq.getPrice() * updateOrderRq.getQuantity())) {
             order.getBroker().decreaseCreditBy(order.getValue());
-            results.add(MatchResult.notEnoughCredit(order));
+            results.add(MatchResult.notEnoughCredit(order.snapshotWithRQ(updateOrderRq.getRequestId())));
             return results;
         }
         order.updateFromRequest(updateOrderRq);

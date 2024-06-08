@@ -24,6 +24,7 @@ import org.springframework.test.annotation.DirtiesContext;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -48,7 +49,7 @@ public class OrderHandlerTest {
     private Broker broker1;
     private Broker broker2;
     private Broker broker3;
-    private EventPublisher mockEventPublisher;
+
 
     @BeforeEach
     void setup() {
@@ -69,7 +70,6 @@ public class OrderHandlerTest {
         brokerRepository.addBroker(broker1);
         brokerRepository.addBroker(broker2);
         brokerRepository.addBroker(broker3);
-        mockEventPublisher = mock(EventPublisher.class, withSettings().verboseLogging());
     }
     @Test
     void new_order_matched_completely_with_one_trade() {
@@ -101,15 +101,19 @@ public class OrderHandlerTest {
         Trade trade = new Trade(security, matchingBuyOrder.getPrice(), incomingSellOrder.getQuantity(),
                 matchingBuyOrder, incomingSellOrder);
         ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
-        verify(mockEventPublisher).publishMany(argumentCaptor.capture());
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
         List<Event> capturedEvents = argumentCaptor.getValue();
         assertTrue(capturedEvents.stream().anyMatch(event ->
                 event instanceof OrderAcceptedEvent &&
                         ((OrderAcceptedEvent) event).getOrderId() == 200 &&
-               ((OrderAcceptedEvent) event).getRequestId() == 1
+                        ((OrderAcceptedEvent) event).getRequestId() == 1
         ));
-        //verify(mockEventPublisher).publish((new OrderAcceptedEvent(1, 200)));
-        //verify(eventPublisher).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade))));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 200 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 1 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(new TradeDTO(trade)))
+        ));
     }
 
     @Test
@@ -117,8 +121,16 @@ public class OrderHandlerTest {
         orderHandler.handleEnterOrder(EnterOrderRq.createNewOrderRq(1, "ABC",
                 200, LocalDateTime.now(), Side.SELL, 300, 15450, 2,
                 shareholder.getShareholderId(), 0, 0));
-        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 200 &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 1
+        ));
     }
+
     @Test
     void new_order_matched_partially_with_two_trades() {
         Order matchingBuyOrder1 = Order.builder()
@@ -165,8 +177,20 @@ public class OrderHandlerTest {
                 matchingBuyOrder1, incomingSellOrder);
         Trade trade2 = new Trade(security, matchingBuyOrder2.getPrice(), matchingBuyOrder2.getQuantity(),
                 matchingBuyOrder2, incomingSellOrder.snapshotWithQuantity(700));
-        verify(eventPublisher).publish(new OrderAcceptedEvent(1, 200));
-        verify(eventPublisher).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade1), new TradeDTO(trade2))));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 200 &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 1
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 200 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 1 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(new TradeDTO(trade1), new TradeDTO(trade2)))
+        ));
     }
 
     @Test
@@ -205,8 +229,20 @@ public class OrderHandlerTest {
                 incomingSellOrder.getBroker().getBrokerId(),
                 incomingSellOrder.getShareholder().getShareholderId(), 100, 0));
 
-        verify(mockEventPublisher).publish(new OrderAcceptedEvent(1, 200));
-        verify(mockEventPublisher).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade))));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(mockEventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent &&
+                        ((OrderAcceptedEvent) event).getOrderId() == 200 &&
+                        ((OrderAcceptedEvent) event).getRequestId() == 1
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 200 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 1 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(new TradeDTO(trade)))
+        ));
     }
 
     @Test
@@ -262,7 +298,14 @@ public class OrderHandlerTest {
         orderHandler.handleEnterOrder(EnterOrderRq.createUpdateOrderRq(1, "ABC", 200,
                 LocalDateTime.now(), Side.SELL, 1000, 15450, 1, shareholder.getShareholderId(),
                 0, 0));
-        verify(eventPublisher).publish(new OrderUpdatedEvent(1, 200));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderUpdatedEvent &&
+                        ((OrderUpdatedEvent) event).getOrderId() == 200 &&
+                        ((OrderUpdatedEvent) event).getRequestId() == 1
+        ));
     }
 
     @Test
@@ -303,8 +346,20 @@ public class OrderHandlerTest {
                 shareholder.getShareholderId(), 0, 0));
 
         Trade trade = new Trade(security, 15450, 500, matchingOrder, afterUpdate);
-        verify(eventPublisher).publish(new OrderUpdatedEvent(1, 200));
-        verify(eventPublisher).publish(new OrderExecutedEvent(1, 200, List.of(new TradeDTO(trade))));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderUpdatedEvent &&
+                        ((OrderUpdatedEvent) event).getOrderId() == 200 &&
+                        ((OrderUpdatedEvent) event).getRequestId() == 1
+        ));
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent &&
+                        ((OrderExecutedEvent) event).getOrderId() == 200 &&
+                        ((OrderExecutedEvent) event).getRequestId() == 1 &&
+                        Objects.equals(((OrderExecutedEvent) event).getTrades(), List.of(new TradeDTO(trade)))
+        ));
     }
 
     @Test
@@ -428,7 +483,15 @@ public class OrderHandlerTest {
                 LocalDateTime.now(), Side.SELL, 400, 590, broker1.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0));
 
-        verify(eventPublisher).publish(new OrderRejectedEvent(1, 200, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderRejectedEvent &&
+                        ((OrderRejectedEvent) event).getOrderId() == 200 &&
+                        ((OrderRejectedEvent) event).getRequestId() == 1 &&
+                        Objects.equals(((OrderRejectedEvent) event).getErrors(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS))
+        ));
     }
 
     @Test
@@ -488,7 +551,15 @@ public class OrderHandlerTest {
                 LocalDateTime.now(), Side.SELL, 450, 580, broker1.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0));
 
-        verify(eventPublisher).publish(new OrderRejectedEvent(1, 6, List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS)));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderRejectedEvent &&
+                        ((OrderRejectedEvent) event).getOrderId() == 6 &&
+                        ((OrderRejectedEvent) event).getRequestId() == 1 &&
+                        Objects.equals(((OrderRejectedEvent) event).getErrors(), List.of(Message.SELLER_HAS_NOT_ENOUGH_POSITIONS))
+        ));
     }
 
     @Test
@@ -551,7 +622,12 @@ public class OrderHandlerTest {
                 LocalDateTime.now(), Side.SELL, 250, 570, broker1.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0));
 
-        verify(eventPublisher).publish(any(OrderExecutedEvent.class));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderExecutedEvent
+        ));
         assertThat(shareholder1.hasEnoughPositionsOn(security, 100_000 + 250)).isTrue();
         assertThat(shareholder.hasEnoughPositionsOn(security, 99_500 - 251)).isFalse();
     }
@@ -616,7 +692,12 @@ public class OrderHandlerTest {
                 LocalDateTime.now(), Side.BUY, 500, 570, broker3.getBrokerId(),
                 shareholder.getShareholderId(), 0, 0));
 
-        verify(eventPublisher).publish(any(OrderAcceptedEvent.class));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent
+        ));
         assertThat(shareholder1.hasEnoughPositionsOn(security, 100_000)).isTrue();
         assertThat(shareholder.hasEnoughPositionsOn(security, 500)).isTrue();
     }
@@ -681,7 +762,12 @@ public class OrderHandlerTest {
                 LocalDateTime.now(), Side.BUY, 500, 545, broker3.getBrokerId(),
                 shareholder1.getShareholderId(), 0, 0));
 
-        verify(eventPublisher).publish(any(OrderAcceptedEvent.class));
+        ArgumentCaptor<List<Event>> argumentCaptor = ArgumentCaptor.forClass(List.class);
+        verify(eventPublisher, times(1)).publishMany(argumentCaptor.capture());
+        List<Event> capturedEvents = argumentCaptor.getValue();
+        assertTrue(capturedEvents.stream().anyMatch(event ->
+                event instanceof OrderAcceptedEvent
+        ));
         assertThat(shareholder1.hasEnoughPositionsOn(security, 100_000)).isTrue();
         assertThat(shareholder.hasEnoughPositionsOn(security, 500)).isTrue();
     }
