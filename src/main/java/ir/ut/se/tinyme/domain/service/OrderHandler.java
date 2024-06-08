@@ -95,12 +95,34 @@ public class OrderHandler {
 
     private void validateEnterOrderRq(EnterOrderRq enterOrderRq) throws InvalidRequestException {
         List<String> errors = new LinkedList<>();
-        if (enterOrderRq.getOrderId() <= 0)
-            errors.add(Message.INVALID_ORDER_ID);
-        if (enterOrderRq.getQuantity() <= 0)
-            errors.add(Message.ORDER_QUANTITY_NOT_POSITIVE);
-        if (enterOrderRq.getPrice() <= 0)
-            errors.add(Message.ORDER_PRICE_NOT_POSITIVE);
+        checkTheBasicOrderConditions(enterOrderRq, errors);
+        checkTheBasicSecurityConditions(enterOrderRq, errors);
+        checkTheRepoConditions(enterOrderRq, errors);
+        checkPeakAndMEQOrderConditions(enterOrderRq, errors);
+        checkTheStopLimitConditions(enterOrderRq, errors);
+        if (!errors.isEmpty())
+            throw new InvalidRequestException(errors);
+    }
+
+    private void checkPeakAndMEQOrderConditions(EnterOrderRq enterOrderRq, List<String> errors){
+        if(enterOrderRq.getPeakSize() != 0 && enterOrderRq.getMinimumExecutionQuantity() != 0)
+            errors.add(Message.MEQ_ORDERS_CANT_BE_PEAK_ORDERS);
+        if (enterOrderRq.getPeakSize() < 0 || enterOrderRq.getPeakSize() >= enterOrderRq.getQuantity())
+            errors.add(Message.INVALID_PEAK_SIZE);
+        if (!this.isValidMinimumExecutionQuantityRange(enterOrderRq))
+            errors.add(Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE);
+        if (this.validateMEQAndStopLimitNewOrderCondition(enterOrderRq) && (enterOrderRq.getRequestType() ==  OrderEntryType.NEW_ORDER))
+            errors.add(Message.CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE);
+    }
+
+    private void checkTheRepoConditions(EnterOrderRq enterOrderRq, List<String> errors){
+        if (brokerRepository.findBrokerById(enterOrderRq.getBrokerId()) == null)
+            errors.add(Message.UNKNOWN_BROKER_ID);
+        if (shareholderRepository.findShareholderById(enterOrderRq.getShareholderId()) == null)
+            errors.add(Message.UNKNOWN_SHAREHOLDER_ID);
+    }
+
+    private void checkTheBasicSecurityConditions(EnterOrderRq enterOrderRq, List<String> errors) {
         Security security = securityRepository.findSecurityByIsin(enterOrderRq.getSecurityIsin());
         if (security == null)
             errors.add(Message.UNKNOWN_SECURITY_ISIN);
@@ -110,21 +132,15 @@ public class OrderHandler {
             if (enterOrderRq.getPrice() % security.getTickSize() != 0)
                 errors.add(Message.PRICE_NOT_MULTIPLE_OF_TICK_SIZE);
         }
-        if(enterOrderRq.getPeakSize() != 0 && enterOrderRq.getMinimumExecutionQuantity() != 0)
-            errors.add(Message.MEQ_ORDERS_CANT_BE_PEAK_ORDERS);
-        if (brokerRepository.findBrokerById(enterOrderRq.getBrokerId()) == null)
-            errors.add(Message.UNKNOWN_BROKER_ID);
-        if (shareholderRepository.findShareholderById(enterOrderRq.getShareholderId()) == null)
-            errors.add(Message.UNKNOWN_SHAREHOLDER_ID);
-        if (enterOrderRq.getPeakSize() < 0 || enterOrderRq.getPeakSize() >= enterOrderRq.getQuantity())
-            errors.add(Message.INVALID_PEAK_SIZE);
-        if (!this.isValidMinimumExecutionQuantityRange(enterOrderRq))
-            errors.add(Message.INVALID_MINIMUM_EXECUTION_QUANTITY_RANGE);
-        if (this.validateMEQAndStopLimitNewOrderCondition(enterOrderRq) && (enterOrderRq.getRequestType() ==  OrderEntryType.NEW_ORDER))
-            errors.add(Message.CAN_NOT_INITIALIZE_MEQ_OR_STOP_LIMIT_ORDERS_ON_AUCTION_MODE);
-        checkTheStopLimitConditions(enterOrderRq, errors);
-        if (!errors.isEmpty())
-            throw new InvalidRequestException(errors);
+    }
+
+    private void checkTheBasicOrderConditions(EnterOrderRq enterOrderRq,List<String> errors){
+        if (enterOrderRq.getOrderId() <= 0)
+            errors.add(Message.INVALID_ORDER_ID);
+        if (enterOrderRq.getQuantity() <= 0)
+            errors.add(Message.ORDER_QUANTITY_NOT_POSITIVE);
+        if (enterOrderRq.getPrice() <= 0)
+            errors.add(Message.ORDER_PRICE_NOT_POSITIVE);
     }
 
     private boolean validateMEQAndStopLimitNewOrderCondition(EnterOrderRq enterOrderRq){
